@@ -4,9 +4,10 @@ import { validateIcu } from '$lib/icu'
 import { authMiddleware, type CurrentUser } from '$middleware/auth'
 import { rateLimit, ensureAnonId } from '$middleware/rate-limit'
 import { db } from '$db/index'
-import { suggestionAttribution } from '$db/schema'
+import { suggestionAttribution, users } from '$db/schema'
 import { writeAudit } from '$lib/audit'
 import { id } from '$lib/ulid'
+import { inArray, eq } from 'drizzle-orm'
 
 async function languageIdForLocale(locale: string): Promise<number | null> {
   const langs = await tolgee.listLanguages()
@@ -57,4 +58,65 @@ export default new Elysia()
       return { suggestionId: suggestion.id, attributionId }
     },
     { body: t.Object({ keyId: t.Number(), locale: t.String(), text: t.String({ minLength: 1, maxLength: 5000 }) }) },
+  )
+  .get(
+    '/suggestions',
+    async ({ query, status }) => {
+      let languageId: number | undefined
+      if (query.locale) {
+        const langs = await tolgee.listLanguages()
+        languageId = langs.find((l) => l.tag === query.locale)?.id
+        if (languageId === undefined) return status(400, { error: 'unknown locale' })
+      }
+
+      let page: Awaited<ReturnType<typeof tolgee.listSuggestions>>
+      try {
+        page = await tolgee.listSuggestions({
+          languageId,
+          keyId: query.keyId ? Number(query.keyId) : undefined,
+          cursor: query.cursor,
+        })
+      } catch {
+        return status(502, { error: 'tolgee unavailable' })
+      }
+
+      const ids = page.suggestions.map((s) => s.id)
+      const attrs = ids.length
+        ? await db
+            .select({
+              tolgeeSuggestionId: suggestionAttribution.tolgeeSuggestionId,
+              status: suggestionAttribution.status,
+              authorLogin: users.login,
+              anonId: suggestionAttribution.anonId,
+            })
+            .from(suggestionAttribution)
+            .leftJoin(users, eq(users.id, suggestionAttribution.authorUserId))
+            .where(inArray(suggestionAttribution.tolgeeSuggestionId, ids))
+        : []
+
+      const byId = new Map(attrs.map((a) => [a.tolgeeSuggestionId, a]))
+      return {
+        suggestions: page.suggestions.map((s) => {
+          const a = byId.get(s.id)
+          return {
+            ...s,
+            attribution: a
+              ? {
+                  author: a.authorLogin ? { login: a.authorLogin } : undefined,
+                  anon: !a.authorLogin,
+                  status: a.status,
+                }
+              : null,
+          }
+        }),
+        nextCursor: page.nextCursor,
+      }
+    },
+    {
+      query: t.Object({
+        locale: t.Optional(t.String()),
+        keyId: t.Optional(t.String()),
+        cursor: t.Optional(t.String()),
+      }),
+    },
   )
