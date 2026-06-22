@@ -1,0 +1,8 @@
+{
+  "extends": "@ct/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": "src",
+    "paths": { "$lib/*": ["lib/*"], "$middleware/*": ["middleware/*"], "$db/*": ["db/*"] }
+  },
+  "include": ["src", "test"]
+}
