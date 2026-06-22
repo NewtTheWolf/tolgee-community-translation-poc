@@ -18,6 +18,7 @@ export default new Elysia().get(
     const ghRes = await fetch('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${tokens.accessToken()}`, 'User-Agent': 'community-translations' },
     })
+    if (!ghRes.ok) return status(502, { error: 'github api error' })
     const gh = (await ghRes.json()) as { id: number; login: string; name?: string; avatar_url?: string }
 
     const isAdmin = adminLogins().has(gh.login.toLowerCase())
