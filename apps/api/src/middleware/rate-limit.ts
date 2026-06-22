@@ -1,4 +1,4 @@
-import { Elysia, type Context, type Cookie } from 'elysia'
+import { Elysia, type Cookie } from 'elysia'
 import { id } from '$lib/ulid'
 
 // Elysia's cookie jar in plugin scope: Record<string, Cookie<unknown>>.
@@ -8,18 +8,22 @@ type CookieJar = Record<string, Cookie<unknown>>
 // Returns the existing anon_id cookie value, or issues a fresh one.
 // Accepts Elysia's Cookie<unknown> jar so the function is typed precisely
 // without requiring generics that are only resolved per-route.
+// NOTE: requires { as: 'global' } scope on the plugin hook so ctx.cookie is
+// the Proxy-backed jar — accessing any key always returns a Cookie object,
+// never undefined, even when the client sent no cookie. The non-null assertions
+// below are justified by that runtime guarantee; noUncheckedIndexedAccess cannot
+// see through the Proxy.
 export function ensureAnonId(cookie: CookieJar): string {
   const existing = cookie.anon_id?.value
   if (typeof existing === 'string' && existing.length > 0) return existing
   const value = id()
   // Cookie<unknown>.value setter accepts unknown; httpOnly etc. are direct properties.
-  if (cookie.anon_id) {
-    cookie.anon_id.value = value
-    cookie.anon_id.httpOnly = true
-    cookie.anon_id.path = '/'
-    cookie.anon_id.maxAge = 60 * 60 * 24 * 365
-    cookie.anon_id.sameSite = 'lax'
-  }
+  // The slot is always present via the Proxy — non-null assertions are safe here.
+  cookie.anon_id!.value = value
+  cookie.anon_id!.httpOnly = true
+  cookie.anon_id!.path = '/'
+  cookie.anon_id!.maxAge = 60 * 60 * 24 * 365
+  cookie.anon_id!.sameSite = 'lax'
   return value
 }
 
@@ -29,10 +33,15 @@ export function rateLimit(opts: { windowMs: number; max: number }) {
   const hits = new Map<string, number[]>()
 
   return new Elysia({ name: `rate-limit-${opts.windowMs}-${opts.max}` }).onBeforeHandle(
-    // Context<{}> is the base context type for a plugin with no route-specific
-    // generics — it carries Cookie<unknown>, HTTPHeaders, and the status overload
-    // we need. Using the real type (not `as any`) keeps the compiler honest.
-    (ctx: Context) => {
+    // { as: 'global' } propagates this hook to all routes on the consuming app,
+    // which is required for the plugin to intercept parent-app routes AND to
+    // receive a fully initialised Proxy-backed cookie jar (ctx.cookie) so that
+    // ensureAnonId can both read incoming cookies and issue Set-Cookie headers.
+    // The handler type is left inferred so Elysia's overload resolution picks
+    // the correct global-scope variant — explicit Context<{}> annotation is
+    // incompatible with the global overload's params type.
+    { as: 'global' },
+    (ctx) => {
       const key = ensureAnonId(ctx.cookie)
       const now = Date.now()
       const recent = (hits.get(key) ?? []).filter((t) => now - t < opts.windowMs)
