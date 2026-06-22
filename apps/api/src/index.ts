@@ -5,11 +5,9 @@ import { fsr } from 'elysia-fsr'
 import { env, allowedOrigins } from '$lib/env'
 import { logger } from '$lib/logger'
 import { loggerMiddleware } from '$middleware/logger'
-// TASK5: restore when db/index exists
-// import { connectDB } from '$db/index'
+import { connectDB } from '$db/index'
 
-// TASK5: restore when db/index exists
-// await connectDB(env.DATABASE_URL)
+await connectDB(env.DATABASE_URL)
 
 export async function createApp() {
   const router = await fsr({ dir: './routes', types: false })
