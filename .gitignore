@@ -1,0 +1,6 @@
+node_modules
+.env
+.turbo
+.svelte-kit
+apps/api/src/db/migrations
+dist
