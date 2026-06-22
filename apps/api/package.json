@@ -9,7 +9,7 @@
     "start": "bun src/index.ts",
     "build": "echo 'no build step'",
     "check": "tsc --noEmit",
-    "test": "bun test",
+    "test": "bun test --isolate",
     "migrate": "bun src/db/migrate.ts",
     "generate": "bunx drizzle-kit generate"
   },

@@ -8,7 +8,7 @@ import { effectiveRoleFor, roleSatisfies } from '$lib/roles'
 export type CurrentUser = { id: string; login: string; isAdmin: boolean }
 
 export const authMiddleware = new Elysia({ name: 'auth' })
-  .derive(async ({ cookie }) => {
+  .derive({ as: 'global' }, async ({ cookie }) => {
     const token = cookie.session?.value
     if (!token || typeof token !== 'string') return { user: null as CurrentUser | null }
     const payload = await verifySession(token)
