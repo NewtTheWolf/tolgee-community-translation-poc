@@ -17,4 +17,16 @@ describe('fetchWithRetry', () => {
     const f = mock(async () => new Response(JSON.stringify({ code: 'bad' }), { status: 400 })) as unknown as typeof fetch
     await expect(fetchWithRetry('http://x', {}, { fetchImpl: f })).rejects.toBeInstanceOf(TolgeeApiError)
   })
+
+  it('throws TolgeeApiError after exhausting all retries on persistent 429', async () => {
+    let calls = 0
+    const f = mock(async () => {
+      calls++
+      return new Response('rate limited', { status: 429 })
+    }) as unknown as typeof fetch
+    const err = await fetchWithRetry('http://x', {}, { retries: 2, fetchImpl: f, baseDelayMs: 1 }).catch((e) => e)
+    expect(err).toBeInstanceOf(TolgeeApiError)
+    expect((err as TolgeeApiError).status).toBe(429)
+    expect(calls).toBe(3) // initial attempt + 2 retries
+  })
 })

@@ -1,1 +1,1 @@
-{ "name": "@ct/tsconfig", "version": "0.1.0", "private": true, "files": ["base.json"] }
+{ "name": "@ct/tsconfig", "version": "0.1.0", "private": true, "files": ["base.json"], "exports": { "./base.json": "./base.json" } }
