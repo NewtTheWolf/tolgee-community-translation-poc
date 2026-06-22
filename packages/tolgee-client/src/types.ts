@@ -28,3 +28,12 @@ export interface TolgeeConfig {
   projectId: number
   apiKey: string
 }
+
+export interface TolgeeSuggestion {
+  id: number
+  keyId: number
+  languageId: number
+  translation: string
+  state: string
+  author?: { id: number; name?: string }
+}

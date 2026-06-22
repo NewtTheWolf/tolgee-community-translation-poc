@@ -1,5 +1,5 @@
 import { fetchWithRetry } from './http'
-import type { ListTranslationsParams, TolgeeConfig, TolgeeLanguage, TranslationsPage } from './types'
+import type { ListTranslationsParams, TolgeeConfig, TolgeeLanguage, TolgeeSuggestion, TranslationsPage } from './types'
 
 export class TolgeeClient {
   constructor(
@@ -20,6 +20,18 @@ export class TolgeeClient {
     return res.json()
   }
 
+  private async send(url: string, method: string, body?: unknown): Promise<Response> {
+    return fetchWithRetry(
+      url,
+      {
+        method,
+        headers: this.headers(body ? { 'Content-Type': 'application/json' } : undefined),
+        body: body ? JSON.stringify(body) : undefined,
+      },
+      { fetchImpl: this.fetchImpl },
+    )
+  }
+
   async listLanguages(): Promise<TolgeeLanguage[]> {
     const data = (await this.get(this.base('/languages?size=100'))) as {
       _embedded?: { languages?: TolgeeLanguage[] }
@@ -38,5 +50,70 @@ export class TolgeeClient {
       nextCursor?: string
     }
     return { keys: data._embedded?.keys ?? [], nextCursor: data.nextCursor }
+  }
+
+  async createSuggestion(p: { keyId: number; languageId: number; text: string }): Promise<TolgeeSuggestion> {
+    const res = await this.send(this.base('/suggestions'), 'POST', {
+      keyId: p.keyId,
+      languageId: p.languageId,
+      translation: p.text,
+    })
+    return (await res.json()) as TolgeeSuggestion
+  }
+
+  async listSuggestions(p: { keyId?: number; languageId?: number; cursor?: string; size?: number } = {}) {
+    const qs = new URLSearchParams()
+    if (p.keyId) qs.set('keyId', String(p.keyId))
+    if (p.languageId) qs.set('languageId', String(p.languageId))
+    if (p.cursor) qs.set('cursor', p.cursor)
+    qs.set('size', String(p.size ?? 50))
+    const data = (await this.get(this.base(`/suggestions?${qs}`))) as {
+      _embedded?: { suggestions?: TolgeeSuggestion[] }
+      nextCursor?: string
+    }
+    return { suggestions: data._embedded?.suggestions ?? [], nextCursor: data.nextCursor }
+  }
+
+  async acceptSuggestion(id: number): Promise<void> {
+    await this.send(this.base(`/suggestions/${id}/accept`), 'PUT')
+  }
+
+  async declineSuggestion(id: number): Promise<void> {
+    await this.send(this.base(`/suggestions/${id}/decline`), 'PUT')
+  }
+
+  async setSuggestionActive(id: number, active: boolean): Promise<void> {
+    await this.send(this.base(`/suggestions/${id}/set-active`), 'PUT', { active })
+  }
+
+  async setTranslation(p: { key: string; language: string; text: string }): Promise<{ translationId: number }> {
+    const res = await this.send(this.base('/translations'), 'PUT', {
+      key: p.key,
+      translations: { [p.language]: p.text },
+    })
+    const data = (await res.json()) as { translations?: Record<string, { id: number }> }
+    return { translationId: data.translations?.[p.language]?.id ?? 0 }
+  }
+
+  async setTranslationState(translationId: number, state: 'TRANSLATED' | 'REVIEWED' | 'UNTRANSLATED'): Promise<void> {
+    await this.send(this.base(`/translations/${translationId}/set-state/${state}`), 'PUT')
+  }
+
+  async getMtSuggestions(p: { keyId: number; targetLanguageId: number }): Promise<string[]> {
+    const res = await this.send(this.base('/suggest/machine-translations'), 'POST', {
+      keyId: p.keyId,
+      targetLanguageId: p.targetLanguageId,
+    })
+    const data = (await res.json()) as { machineTranslations?: Record<string, string> }
+    return Object.values(data.machineTranslations ?? {})
+  }
+
+  async getTmSuggestions(p: { keyId: number; targetLanguageId: number }) {
+    const res = await this.send(this.base('/suggest/translation-memory'), 'POST', {
+      keyId: p.keyId,
+      targetLanguageId: p.targetLanguageId,
+    })
+    const data = (await res.json()) as { _embedded?: { translationMemoryItems?: { targetText: string; similarity: number }[] } }
+    return (data._embedded?.translationMemoryItems ?? []).map((i) => ({ text: i.targetText, similarity: i.similarity }))
   }
 }
