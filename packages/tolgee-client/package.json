@@ -1,0 +1,10 @@
+{
+  "name": "@ct/tolgee-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "module": "src/index.ts",
+  "exports": { ".": { "types": "./src/index.ts", "default": "./src/index.ts" } },
+  "scripts": { "test": "bun test", "check": "tsc --noEmit" },
+  "devDependencies": { "@ct/tsconfig": "workspace:*" }
+}
