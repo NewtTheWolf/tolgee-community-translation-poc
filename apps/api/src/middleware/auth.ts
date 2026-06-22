@@ -31,13 +31,14 @@ export const authMiddleware = new Elysia({ name: 'auth' })
         return { user }
       },
     },
-    requireRole: (cfg: { locale: 'param' | 'body'; min: 'translator' | 'reviewer' }) => ({
-      async resolve({ user, params, body, status }) {
+    requireRole: (cfg: { locale: 'param' | 'body' | 'query'; min: 'translator' | 'reviewer' }) => ({
+      async resolve({ user, params, body, query, status }) {
         if (!user) return status(401, { error: 'authentication required' })
-        // params/body are opaque in macro context — narrow cast is required; user is confirmed non-null above
+        // params/body/query are opaque in macro context — narrow cast is required; user is confirmed non-null above
         const p = params as Record<string, string>
         const b = body as { locale?: string }
-        const locale = cfg.locale === 'param' ? p.locale : b?.locale
+        const q = query as Record<string, string>
+        const locale = cfg.locale === 'param' ? p.locale : cfg.locale === 'query' ? q.locale : b?.locale
         if (!locale) return status(400, { error: 'locale required' })
         const userRoles = await db.select().from(roles).where(eq(roles.userId, user.id))
         const eff = effectiveRoleFor(user, userRoles, locale)
