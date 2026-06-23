@@ -12,7 +12,13 @@ export default new Elysia().use(authMiddleware).get(
     const q = (query.q ?? '').trim()
     if (q.length < 1) return []
     return db
-      .select({ id: users.id, login: users.login, name: users.name, avatarUrl: users.avatarUrl, isAdmin: users.isAdmin })
+      .select({
+        id: users.id,
+        login: users.login,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+        isAdmin: users.isAdmin,
+      })
       .from(users)
       .where(or(ilike(users.login, `%${q}%`), ilike(users.name, `%${q}%`)))
       .limit(20)
