@@ -1,0 +1,131 @@
+:root {
+  --bg: #f9fafb;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --radius: 8px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+h1 {
+  font-size: 1.6rem;
+  line-height: 1.25;
+}
+h2 {
+  font-size: 1.2rem;
+}
+
+/* Base controls — component-scoped styles override these where present */
+button {
+  font: inherit;
+  cursor: pointer;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+}
+button:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: inherit;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/* Layout landmarks (rendered by +layout.svelte) */
+header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+header .nav-left,
+header .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+header .nav-right {
+  margin-left: auto;
+}
+header a {
+  color: var(--muted);
+  font-weight: 500;
+}
+header a:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+header .brand {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+main {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
