@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ct-frontend:v1
+          image: ct-frontend:v2
           imagePullPolicy: Never
           ports:
             - containerPort: 3000
