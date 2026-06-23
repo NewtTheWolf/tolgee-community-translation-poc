@@ -2,10 +2,14 @@
 
 A community translation platform for the [Tabularis](https://tabularis.dev) project — browse translations, submit suggestions without an account, and let verified translators review and apply them, all backed by [Tolgee](https://tolgee.io).
 
+**🔗 Live demo: [translations.tabularis.dev](https://translations.tabularis.dev)**
+
 > [!WARNING]
 > **This is a proof of concept.** It was built fast to explore the idea and is **not production-hardened**. Expect rough edges, missing tests around the periphery, best‑effort rate limiting, and security/operational shortcuts. Don't run it as-is for anything you care about without a thorough review.
 
 <p>
+  <a href="https://translations.tabularis.dev"><img alt="Live demo" src="https://img.shields.io/badge/demo-translations.tabularis.dev-1bd0c4"></a>
+  <img alt="Status" src="https://img.shields.io/badge/status-proof%20of%20concept-orange">
   <img alt="Bun" src="https://img.shields.io/badge/Bun-1.3-black?logo=bun">
   <img alt="ElysiaJS" src="https://img.shields.io/badge/API-ElysiaJS-blueviolet">
   <img alt="SvelteKit" src="https://img.shields.io/badge/Web-SvelteKit%205-ff3e00?logo=svelte">
