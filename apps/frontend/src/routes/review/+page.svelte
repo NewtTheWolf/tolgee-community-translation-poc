@@ -17,6 +17,14 @@
     selectedLocale = data.locale ?? ''
   })
 
+  const canVote = $derived(!!data.canVote)
+
+  // Moderation is per-locale: admins may moderate anything; reviewers only the
+  // locale they hold the role for. Recomputed against the *currently selected*
+  // locale so switching locales updates the Accept/Decline visibility.
+  const isReviewerFor = $derived((data.reviewerLocales ?? []).includes(selectedLocale) && selectedLocale.length > 0)
+  const canModerate = $derived(data.isAdmin || isReviewerFor)
+
   async function loadLocale(locale: string) {
     loading = true
     errorMsg = ''
@@ -53,8 +61,8 @@
   }
 </script>
 
-<h1>Review Suggestions</h1>
-<p class="subtitle">Accept or decline community suggestions for your locales.</p>
+<h1>Suggestions</h1>
+<p class="subtitle">Browse community suggestions, vote on them, and (as a reviewer) accept or decline.</p>
 
 {#if data.isAdmin || (data.reviewerLocales ?? []).length > 1}
   <div class="locale-picker">
@@ -78,12 +86,17 @@
   <div class="empty card"><p>Loading…</p></div>
 {:else if suggestions.length === 0}
   <div class="empty card">
-    <p>No pending suggestions{selectedLocale ? ` for ${selectedLocale}` : ''}.</p>
+    <p>No suggestions{selectedLocale ? ` for ${selectedLocale}` : ''} yet.</p>
   </div>
 {:else}
   <div class="cards">
     {#each suggestions as s (s.id)}
-      <SuggestionCard suggestion={s} onaccept={accept} ondecline={decline} />
+      <SuggestionCard
+        suggestion={s}
+        {canVote}
+        onaccept={canModerate ? accept : undefined}
+        ondecline={canModerate ? decline : undefined}
+      />
     {/each}
   </div>
 {/if}

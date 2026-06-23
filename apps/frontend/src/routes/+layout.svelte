@@ -3,7 +3,6 @@
   import '../app.css'
   let { data, children } = $props()
   const me = $derived(data.me)
-  const canReview = $derived(me.user?.isAdmin || (me.roles ?? []).some((r) => r.role === 'reviewer'))
   const path = $derived(page.url.pathname)
   const initial = $derived((me.user?.login ?? '?').charAt(0))
 </script>
@@ -12,7 +11,7 @@
   <nav class="nav-left">
     <a href="/" class="brand"><span class="brand-mark">T</span>Translations</a>
     <a href="/" class="nav-link" class:active={path === '/'}>Languages</a>
-    {#if canReview}<a href="/review" class="nav-link" class:active={path.startsWith('/review')}>Review</a>{/if}
+    <a href="/review" class="nav-link" class:active={path.startsWith('/review')}>Suggestions</a>
     {#if me.user?.isAdmin}<a href="/admin" class="nav-link" class:active={path.startsWith('/admin')}>Admin</a>{/if}
   </nav>
   <div class="nav-right">
