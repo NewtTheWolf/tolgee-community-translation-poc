@@ -39,23 +39,70 @@
   }
 
   // --- Roles ---
+  type UserHit = { id: string; login: string; name: string | null; avatarUrl: string | null; isAdmin: boolean }
+
   let roles = $state<Role[]>([])
-  let newUserId = $state('')
   let newLocale = $state('')
   let newRole = $state<'translator' | 'reviewer'>('translator')
   let roleFeedback = $state<Feedback>(null)
 
+  // User picker (search-as-you-type combobox)
+  let userQuery = $state('')
+  let userResults = $state<UserHit[]>([])
+  let selectedUser = $state<{ id: string; login: string } | null>(null)
+  let searchOpen = $state(false)
+  let searchTimer: ReturnType<typeof setTimeout> | undefined
+
+  function onUserInput() {
+    selectedUser = null
+    const q = userQuery.trim()
+    clearTimeout(searchTimer)
+    if (!q) {
+      userResults = []
+      searchOpen = false
+      return
+    }
+    searchTimer = setTimeout(async () => {
+      try {
+        userResults = await api.get<UserHit[]>(`/admin/users?q=${encodeURIComponent(q)}`)
+        searchOpen = true
+      } catch {
+        userResults = []
+        searchOpen = false
+      }
+    }, 250)
+  }
+
+  function selectUser(u: UserHit) {
+    selectedUser = { id: u.id, login: u.login }
+    userQuery = u.login
+    userResults = []
+    searchOpen = false
+  }
+
+  function clearSelectedUser() {
+    selectedUser = null
+    userQuery = ''
+    userResults = []
+    searchOpen = false
+  }
+
   async function grantRole(e: Event) {
     e.preventDefault()
     roleFeedback = null
+    if (!selectedUser) {
+      roleFeedback = { msg: 'Select a user first.', kind: 'error' }
+      return
+    }
+    const targetUser = selectedUser
     try {
       const result = await api.post<{ id: string }>('/admin/roles', {
-        userId: newUserId,
+        userId: targetUser.id,
         locale: newLocale,
         role: newRole,
       })
-      roles = [...roles, { id: result.id, userId: newUserId, locale: newLocale, role: newRole }]
-      newUserId = ''
+      roles = [...roles, { id: result.id, userId: targetUser.id, locale: newLocale, role: newRole }]
+      clearSelectedUser()
       newLocale = ''
       roleFeedback = { msg: 'Role granted.', kind: 'success' }
       await invalidateAll()
@@ -152,13 +199,61 @@
 
   <h3>Grant Role</h3>
   <form onsubmit={grantRole} class="grant-form">
-    <input type="text" bind:value={newUserId} placeholder="User ID" required />
-    <input type="text" bind:value={newLocale} placeholder="Locale (e.g. de)" required />
-    <select bind:value={newRole}>
+    <div class="user-picker">
+      {#if selectedUser}
+        <span class="user-chip">
+          <span class="avatar">{selectedUser.login.charAt(0)}</span>
+          {selectedUser.login}
+          <button type="button" class="user-chip-remove" aria-label="Remove selected user" onclick={clearSelectedUser}
+            >×</button
+          >
+        </span>
+      {:else}
+        <input
+          type="text"
+          role="combobox"
+          aria-expanded={searchOpen}
+          aria-controls="user-listbox"
+          aria-autocomplete="list"
+          aria-label="Search for a user by login or name"
+          bind:value={userQuery}
+          oninput={onUserInput}
+          placeholder="Search user…"
+          autocomplete="off"
+        />
+        {#if searchOpen && userResults.length > 0}
+          <ul id="user-listbox" class="user-dropdown" role="listbox">
+            {#each userResults as u (u.id)}
+              <li>
+                <button
+                  type="button"
+                  class="user-option"
+                  role="option"
+                  aria-selected="false"
+                  onclick={() => selectUser(u)}
+                >
+                  <span class="avatar">{u.login.charAt(0)}</span>
+                  <span class="user-option-body">
+                    <span class="user-option-login">{u.login}</span>
+                    {#if u.name}<span class="user-option-name">{u.name}</span>{/if}
+                  </span>
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {:else if searchOpen}
+          <ul id="user-listbox" class="user-dropdown" role="listbox">
+            <li class="user-empty">No users found.</li>
+          </ul>
+        {/if}
+      {/if}
+    </div>
+    <input type="text" bind:value={newLocale} placeholder="Locale (e.g. de)" aria-label="Locale" required />
+    <select bind:value={newRole} aria-label="Role">
       <option value="translator">Translator</option>
       <option value="reviewer">Reviewer</option>
     </select>
-    <button type="submit">Grant</button>
+    <button type="submit" disabled={!selectedUser || !newLocale.trim()}>Grant</button>
   </form>
 </section>
 
@@ -270,6 +365,100 @@
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .user-picker {
+    position: relative;
+    min-width: 220px;
+  }
+  .user-picker input {
+    width: 100%;
+  }
+  .user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.25rem 0.35rem 0.25rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  .user-chip .avatar {
+    width: 22px;
+    height: 22px;
+    font-size: 0.65rem;
+  }
+  .user-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1;
+  }
+  .user-chip-remove:hover:not(:disabled) {
+    background: var(--danger-soft);
+    color: var(--danger);
+  }
+  .user-dropdown {
+    position: absolute;
+    top: calc(100% + 0.3rem);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    list-style: none;
+    margin: 0;
+    padding: 0.25rem;
+    max-height: 260px;
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .user-option {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    text-align: left;
+    font-weight: 400;
+  }
+  .user-option:hover:not(:disabled),
+  .user-option:focus-visible {
+    background: var(--surface-2);
+  }
+  .user-option-body {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+    min-width: 0;
+  }
+  .user-option-login {
+    font-weight: 600;
+    font-size: 0.88rem;
+  }
+  .user-option-name {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .user-empty {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
   }
   .settings-form {
     display: flex;
