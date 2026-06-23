@@ -7,6 +7,7 @@ import { logger } from '$lib/logger'
 import { loggerMiddleware } from '$middleware/logger'
 import adminRoles from './routes/admin/roles'
 import adminSettings from './routes/admin/settings'
+import adminUsers from './routes/admin/users'
 import applicationApprove from './routes/applications/[id]/approve'
 import applicationReject from './routes/applications/[id]/reject'
 import applications from './routes/applications/index'
@@ -56,6 +57,7 @@ export function createApp() {
     .use(applicationReject)
     .use(adminRoles)
     .use(adminSettings)
+    .use(adminUsers)
 }
 
 const app = await createApp()
