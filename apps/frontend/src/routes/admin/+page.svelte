@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { invalidateAll } from '$app/navigation'
   import { api } from '$lib/api'
   import type { Application, Role, Settings } from './+page.ts'
 
@@ -19,6 +20,7 @@
     try {
       await api.post(`/applications/${id}/approve`)
       applications = applications.filter((a) => a.id !== id)
+      await invalidateAll()
     } catch {
       appFeedback = 'Failed to approve application.'
     }
@@ -28,6 +30,7 @@
     try {
       await api.post(`/applications/${id}/reject`)
       applications = applications.filter((a) => a.id !== id)
+      await invalidateAll()
     } catch {
       appFeedback = 'Failed to reject application.'
     }
@@ -53,6 +56,7 @@
       newUserId = ''
       newLocale = ''
       roleFeedback = 'Role granted.'
+      await invalidateAll()
     } catch {
       roleFeedback = 'Failed to grant role.'
     }
@@ -62,6 +66,7 @@
     try {
       await api.del(`/admin/roles/${id}`)
       roles = roles.filter((r) => r.id !== id)
+      await invalidateAll()
     } catch {
       roleFeedback = 'Failed to revoke role.'
     }
@@ -77,6 +82,7 @@
     try {
       await api.put('/admin/settings', { autoPromoteThreshold: threshold })
       settingsFeedback = 'Settings saved.'
+      await invalidateAll()
     } catch {
       settingsFeedback = 'Failed to save settings.'
     }

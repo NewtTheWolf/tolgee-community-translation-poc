@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { invalidateAll } from '$app/navigation'
   import { api } from '$lib/api'
   import SuggestionCard from '$lib/components/SuggestionCard.svelte'
   import type { SuggestionWithAttribution } from './+page.ts'
@@ -35,6 +36,7 @@
     try {
       await api.post(`/suggestions/${id}/accept`)
       suggestions = suggestions.filter((s) => s.id !== id)
+      await invalidateAll()
     } catch {
       errorMsg = 'Failed to accept suggestion.'
     }
@@ -44,6 +46,7 @@
     try {
       await api.post(`/suggestions/${id}/decline`)
       suggestions = suggestions.filter((s) => s.id !== id)
+      await invalidateAll()
     } catch {
       errorMsg = 'Failed to decline suggestion.'
     }

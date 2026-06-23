@@ -1,5 +1,4 @@
 <script lang="ts">
-  import ProgressBar from '$lib/components/ProgressBar.svelte'
   let { data } = $props()
 </script>
 
@@ -15,7 +14,6 @@
         <a href="/{lang.tag}">
           <span class="lang-name">{lang.name}</span>
           <span class="lang-tag">{lang.tag}</span>
-          <ProgressBar value={0} />
         </a>
       </li>
     {/each}

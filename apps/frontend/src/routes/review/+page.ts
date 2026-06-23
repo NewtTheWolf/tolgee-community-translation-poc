@@ -32,8 +32,8 @@ export const load: PageLoad = async ({ parent, fetch }) => {
     return { suggestions: [], locale: null, reviewerLocales: [], isAdmin }
   }
 
-  // Use the first reviewer locale (or empty for admin to show all)
-  const defaultLocale = isAdmin ? (reviewerLocales[0] ?? null) : reviewerLocales[0]
+  // Admins default to the "All" view; reviewers default to their first locale.
+  const defaultLocale = isAdmin ? null : (reviewerLocales[0] ?? null)
   const qs = defaultLocale ? `/suggestions?locale=${encodeURIComponent(defaultLocale)}` : '/suggestions'
 
   try {

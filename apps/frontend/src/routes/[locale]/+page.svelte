@@ -51,7 +51,11 @@
           >
           <td class="state">{trans?.state ?? '—'}</td>
           <td>
-            <button onclick={() => toggleSuggest(key.keyId)} class="suggest-btn">
+            <button
+              onclick={() => toggleSuggest(key.keyId)}
+              class="suggest-btn"
+              aria-expanded={activeKeyId === key.keyId}
+            >
               {activeKeyId === key.keyId ? 'Close' : 'Suggest'}
             </button>
           </td>

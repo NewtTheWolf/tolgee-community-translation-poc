@@ -28,7 +28,6 @@
       await api.post('/auth/logout')
     } finally {
       await invalidateAll()
-      location.reload()
     }
   }
 </script>
