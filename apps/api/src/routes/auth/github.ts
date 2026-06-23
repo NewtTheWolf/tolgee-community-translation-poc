@@ -11,7 +11,14 @@ const github = new GitHub(
 export default new Elysia().get('/auth/github', ({ cookie, redirect }) => {
   const state = generateState()
   const url = github.createAuthorizationURL(state, ['read:user'])
-  cookie.oauth_state?.set({ value: state, httpOnly: true, path: '/', maxAge: 600, sameSite: 'lax' })
+  cookie.oauth_state?.set({
+    value: state,
+    httpOnly: true,
+    path: '/',
+    maxAge: 600,
+    sameSite: 'lax',
+    secure: env.NODE_ENV === 'production',
+  })
   return redirect(url.toString())
 })
 

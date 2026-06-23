@@ -1,9 +1,10 @@
 import { eq, inArray } from 'drizzle-orm'
 import { Elysia, t } from 'elysia'
 import { db } from '$db/index'
-import { suggestionAttribution, users } from '$db/schema'
+import { roles, suggestionAttribution, users } from '$db/schema'
 import { writeAudit } from '$lib/audit'
 import { validateIcu } from '$lib/icu'
+import { effectiveRoleFor, roleSatisfies } from '$lib/roles'
 import { tolgee } from '$lib/tolgee'
 import { id } from '$lib/ulid'
 import { authMiddleware, type CurrentUser } from '$middleware/auth'
@@ -61,7 +62,21 @@ export default new Elysia()
   )
   .get(
     '/suggestions',
-    async ({ query, status }) => {
+    async (ctx) => {
+      const { query, status } = ctx
+      // The review queue exposes pending suggestions and contributor logins —
+      // restrict it to reviewers (for the requested locale) and admins. Anonymous
+      // and plain logged-in users must not read it.
+      const user = (ctx as typeof ctx & { user: CurrentUser | null }).user
+      if (!user) return status(401, { error: 'authentication required' })
+      if (!user.isAdmin) {
+        if (!query.locale) return status(400, { error: 'locale required' })
+        const userRoles = await db.select().from(roles).where(eq(roles.userId, user.id))
+        if (!roleSatisfies(effectiveRoleFor(user, userRoles, query.locale), 'reviewer')) {
+          return status(403, { error: `requires reviewer for ${query.locale}` })
+        }
+      }
+
       let languageId: number | undefined
       if (query.locale) {
         const langs = await tolgee.listLanguages()

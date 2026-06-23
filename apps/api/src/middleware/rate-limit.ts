@@ -34,6 +34,10 @@ export function ensureAnonId(cookie: CookieJar): string {
 // Uses Date.now() — allowed in app code (only forbidden inside Workflow scripts).
 export function rateLimit(opts: { windowMs: number; max: number }) {
   const hits = new Map<string, number[]>()
+  // One-shot anonymous visitors would otherwise leave a permanent Map entry each;
+  // sweep fully-expired keys every SWEEP_EVERY requests so memory stays bounded.
+  const SWEEP_EVERY = 1000
+  let opsSinceSweep = 0
 
   return new Elysia({ name: `rate-limit-${opts.windowMs}-${opts.max}` }).onBeforeHandle(
     // { as: 'global' } propagates this hook to all routes on the consuming app,
@@ -47,6 +51,12 @@ export function rateLimit(opts: { windowMs: number; max: number }) {
     (ctx) => {
       const key = ensureAnonId(ctx.cookie)
       const now = Date.now()
+      if (++opsSinceSweep >= SWEEP_EVERY) {
+        opsSinceSweep = 0
+        for (const [k, ts] of hits) {
+          if (ts.every((t) => now - t >= opts.windowMs)) hits.delete(k)
+        }
+      }
       const recent = (hits.get(key) ?? []).filter((t) => now - t < opts.windowMs)
       if (recent.length >= opts.max) {
         ctx.set.headers['Retry-After'] = String(Math.ceil(opts.windowMs / 1000))
