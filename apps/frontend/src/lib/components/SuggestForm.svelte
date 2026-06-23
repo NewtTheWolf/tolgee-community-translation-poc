@@ -20,7 +20,8 @@
     submit()
   }}
 >
-  <textarea bind:value={text} placeholder="Suggest a translation…" aria-label="Suggest a translation" required></textarea>
+  <textarea bind:value={text} placeholder="Suggest a translation…" aria-label="Suggest a translation" required
+  ></textarea>
   <button type="submit">Suggest</button>
   {#if msg}<p>{msg}</p>{/if}
 </form>
