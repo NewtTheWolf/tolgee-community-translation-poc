@@ -1,4 +1,7 @@
 <script lang="ts">
+  import IcuText from './IcuText.svelte'
+  import StateBadge from './StateBadge.svelte'
+
   export interface Suggestion {
     id: number
     keyId: number
@@ -17,88 +20,97 @@
     ondecline,
   }: {
     suggestion: Suggestion
-    onaccept: (id: number) => void
-    ondecline: (id: number) => void
+    onaccept: (id: number) => void | Promise<void>
+    ondecline: (id: number) => void | Promise<void>
   } = $props()
 
-  const authorLabel = $derived(
-    suggestion.attribution?.author?.login
-      ? suggestion.attribution.author.login
-      : suggestion.attribution?.anon
-        ? 'anonymous'
-        : 'unknown',
-  )
+  let busy = $state(false)
+
+  const login = $derived(suggestion.attribution?.author?.login)
+  const isAnon = $derived(!login)
+  const authorLabel = $derived(login ?? (suggestion.attribution?.anon ? 'Anonymous' : 'Unknown'))
+
+  async function run(fn: (id: number) => void | Promise<void>) {
+    if (busy) return
+    busy = true
+    try {
+      await fn(suggestion.id)
+    } finally {
+      busy = false
+    }
+  }
 </script>
 
-<div class="card">
+<div class="card suggestion">
   <div class="meta">
-    <span class="key-id">Key #{suggestion.keyId}</span>
-    <span class="author">by {authorLabel}</span>
-    {#if suggestion.state}<span class="state">{suggestion.state}</span>{/if}
+    <span class="author">
+      {#if login}
+        <span class="avatar">{login.charAt(0)}</span>
+      {:else}
+        <span class="avatar avatar-muted">·</span>
+      {/if}
+      <span class="author-name" class:anon={isAnon}>{authorLabel}</span>
+    </span>
+    <span class="meta-right">
+      <span class="chip">Key #{suggestion.keyId}</span>
+      {#if suggestion.state}<StateBadge state={suggestion.state} />{/if}
+    </span>
   </div>
-  <p class="translation">{suggestion.translation ?? '—'}</p>
+
+  <div class="translation"><IcuText text={suggestion.translation ?? '—'} /></div>
+
   <div class="actions">
-    <button class="accept" onclick={() => onaccept(suggestion.id)}>Accept</button>
-    <button class="decline" onclick={() => ondecline(suggestion.id)}>Decline</button>
+    <button class="accept" onclick={() => run(onaccept)} disabled={busy}>
+      {busy ? 'Working…' : 'Accept'}
+    </button>
+    <button class="btn-danger" onclick={() => run(ondecline)} disabled={busy}>Decline</button>
   </div>
 </div>
 
 <style>
-  .card {
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    padding: 1rem;
+  .suggestion {
+    padding: 1rem 1.1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    background: white;
+    gap: 0.7rem;
   }
   .meta {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 0.75rem;
-    font-size: 0.8rem;
-    color: #6b7280;
     flex-wrap: wrap;
   }
-  .key-id {
-    font-family: monospace;
+  .author {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
   }
-  .state {
-    padding: 0.1rem 0.4rem;
-    background: #f3f4f6;
-    border-radius: 3px;
+  .author-name.anon {
+    color: var(--muted);
+    font-style: italic;
+    font-weight: 400;
+  }
+  .meta-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
   }
   .translation {
-    margin: 0;
     font-size: 0.95rem;
-    color: #111827;
-    white-space: pre-wrap;
-    word-break: break-word;
   }
   .actions {
     display: flex;
     gap: 0.5rem;
   }
   .accept {
-    padding: 0.3rem 0.75rem;
-    background: #10b981;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    background: var(--success);
+    border-color: var(--success);
   }
-  .accept:hover {
+  .accept:hover:not(:disabled) {
     background: #059669;
-  }
-  .decline {
-    padding: 0.3rem 0.75rem;
-    background: #ef4444;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  .decline:hover {
-    background: #dc2626;
+    border-color: #059669;
   }
 </style>

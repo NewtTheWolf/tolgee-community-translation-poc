@@ -4,22 +4,23 @@
 
   let { data } = $props()
   const me = $derived(data.me)
+  const initial = $derived((me.user?.login ?? '?').charAt(0))
 
   let applyLocale = $state('')
   let applyRole = $state<'translator' | 'reviewer'>('translator')
   let applyMsg = $state('')
-  let applyFeedback = $state('')
+  let applyFeedback = $state<{ msg: string; kind: 'success' | 'error' } | null>(null)
 
   async function applyForLanguage(e: Event) {
     e.preventDefault()
-    applyFeedback = ''
+    applyFeedback = null
     try {
       await api.post('/applications', { locale: applyLocale, requestedRole: applyRole, message: applyMsg || undefined })
-      applyFeedback = 'Application submitted!'
+      applyFeedback = { msg: 'Application submitted!', kind: 'success' }
       applyLocale = ''
       applyMsg = ''
     } catch {
-      applyFeedback = 'Could not submit application.'
+      applyFeedback = { msg: 'Could not submit application.', kind: 'error' }
     }
   }
 
@@ -33,25 +34,33 @@
 </script>
 
 {#if !me.user}
-  <p>You are not logged in. <a href="/login">Sign in</a></p>
+  <div class="empty card">
+    <p>You are not logged in. <a href="/login">Sign in</a></p>
+  </div>
 {:else}
   <h1>Profile</h1>
+  <p class="subtitle">Your account, roles, and language applications.</p>
 
-  <section class="section">
-    <h2>Account</h2>
-    <p><strong>Login:</strong> {me.user.login}</p>
-    {#if me.user.isAdmin}<p class="badge">Admin</p>{/if}
-    <button onclick={logout} class="logout-btn">Logout</button>
+  <section class="section card account">
+    <span class="account-avatar">{initial}</span>
+    <div class="account-info">
+      <span class="account-login">{me.user.login}</span>
+      {#if me.user.isAdmin}<span class="badge admin-badge">Admin</span>{/if}
+    </div>
+    <button onclick={logout} class="btn-danger logout-btn">Logout</button>
   </section>
 
   <section class="section">
     <h2>Your Roles</h2>
     {#if (me.roles ?? []).length === 0}
-      <p>No roles assigned yet.</p>
+      <div class="empty card"><p>No roles assigned yet.</p></div>
     {:else}
-      <ul>
+      <ul class="role-list">
         {#each me.roles ?? [] as r}
-          <li>{r.locale} — {r.role}</li>
+          <li class="role-item card">
+            <span class="chip">{r.locale}</span>
+            <span class="badge badge-accent">{r.role}</span>
+          </li>
         {/each}
       </ul>
     {/if}
@@ -59,7 +68,7 @@
 
   <section class="section">
     <h2>Apply for a Language</h2>
-    <form onsubmit={applyForLanguage} class="apply-form">
+    <form onsubmit={applyForLanguage} class="apply-form card">
       <label>
         Locale code
         <input type="text" bind:value={applyLocale} placeholder="e.g. de" required />
@@ -76,60 +85,88 @@
         <textarea bind:value={applyMsg} placeholder="Why are you applying?"></textarea>
       </label>
       <button type="submit">Apply</button>
-      {#if applyFeedback}<p class="feedback">{applyFeedback}</p>{/if}
+      {#if applyFeedback}<p class="banner banner-{applyFeedback.kind}">{applyFeedback.msg}</p>{/if}
     </form>
   </section>
 {/if}
 
 <style>
-  h1 {
-    margin-bottom: 1rem;
-  }
   .section {
     margin-bottom: 2rem;
   }
-  .badge {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
-    background: #fef3c7;
-    color: #92400e;
-    border-radius: 4px;
-    font-size: 0.8rem;
+  .empty {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--muted);
+  }
+  .empty p {
+    margin: 0;
+  }
+  .account {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+  .account-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .account-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex: 1;
+  }
+  .account-login {
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    font-size: 1.05rem;
+  }
+  .admin-badge {
+    align-self: flex-start;
+    color: #92400e;
+    background: #fef3c7;
   }
   .logout-btn {
-    padding: 0.4rem 1rem;
-    background: #ef4444;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    flex-shrink: 0;
   }
-  .logout-btn:hover {
-    background: #dc2626;
+  .role-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .role-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.85rem;
   }
   .apply-form {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    max-width: 400px;
+    gap: 0.85rem;
+    max-width: 420px;
+    padding: 1.25rem;
   }
   .apply-form label {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.3rem;
     font-size: 0.9rem;
     font-weight: 500;
-  }
-  .apply-form input,
-  .apply-form select,
-  .apply-form textarea {
-    padding: 0.4rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    font-family: inherit;
-    font-size: 0.9rem;
   }
   .apply-form textarea {
     min-height: 80px;
@@ -137,18 +174,5 @@
   }
   .apply-form button {
     align-self: flex-start;
-    padding: 0.4rem 1rem;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  .apply-form button:hover {
-    background: #2563eb;
-  }
-  .feedback {
-    font-size: 0.875rem;
-    color: #374151;
   }
 </style>

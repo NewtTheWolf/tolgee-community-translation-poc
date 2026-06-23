@@ -6,6 +6,8 @@ export interface Language {
   tag: string
   name: string
   originalName: string
+  flagEmoji?: string | null
+  base?: boolean
 }
 
 export const load: PageLoad = async ({ fetch }) => {

@@ -3,17 +3,28 @@
 </script>
 
 <h1>Community Translations</h1>
-<p>Select a language to browse and suggest translations.</p>
+<p class="subtitle">Browse a language to view its keys and suggest translations.</p>
 
 {#if data.languages.length === 0}
-  <p>No languages available.</p>
+  <div class="empty card">
+    <p>No languages available yet.</p>
+  </div>
 {:else}
-  <ul class="language-list">
+  <ul class="language-grid">
     {#each data.languages as lang (lang.id)}
       <li>
-        <a href="/{lang.tag}">
-          <span class="lang-name">{lang.name}</span>
-          <span class="lang-tag">{lang.tag}</span>
+        <a href="/{lang.tag}" class="lang-card card">
+          <span class="flag">{lang.flagEmoji || '🌐'}</span>
+          <span class="lang-body">
+            <span class="lang-name">{lang.name}</span>
+            {#if lang.originalName && lang.originalName !== lang.name}
+              <span class="lang-original">{lang.originalName}</span>
+            {/if}
+          </span>
+          <span class="lang-meta">
+            <span class="chip">{lang.tag}</span>
+            {#if lang.base}<span class="badge badge-accent">Base</span>{/if}
+          </span>
         </a>
       </li>
     {/each}
@@ -21,36 +32,59 @@
 {/if}
 
 <style>
-  h1 {
-    margin-bottom: 0.5rem;
-  }
-  .language-list {
+  .language-grid {
     list-style: none;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    max-width: 480px;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.85rem;
   }
-  .language-list li a {
+  .lang-card {
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    padding: 0.75rem 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    text-decoration: none;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem 1.1rem;
     color: inherit;
+    text-decoration: none;
+    transition:
+      transform 0.12s ease,
+      border-color 0.12s ease,
+      box-shadow 0.12s ease;
   }
-  .language-list li a:hover {
-    background: #f9fafb;
-    border-color: #3b82f6;
+  .lang-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-lg);
+    text-decoration: none;
+  }
+  .flag {
+    font-size: 1.6rem;
+    line-height: 1;
+  }
+  .lang-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+    flex: 1;
   }
   .lang-name {
     font-weight: 600;
   }
-  .lang-tag {
-    font-size: 0.75rem;
-    color: #6b7280;
+  .lang-original {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .lang-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+  }
+  .empty {
+    padding: 2rem;
+    text-align: center;
+    color: var(--muted);
   }
 </style>

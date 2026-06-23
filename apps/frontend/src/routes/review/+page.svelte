@@ -54,13 +54,14 @@
 </script>
 
 <h1>Review Suggestions</h1>
+<p class="subtitle">Accept or decline community suggestions for your locales.</p>
 
 {#if data.isAdmin || (data.reviewerLocales ?? []).length > 1}
   <div class="locale-picker">
     <label>
-      Locale:
+      <span>Locale</span>
       <select value={selectedLocale} onchange={(e) => loadLocale((e.target as HTMLSelectElement).value)}>
-        {#if data.isAdmin}<option value="">All</option>{/if}
+        {#if data.isAdmin}<option value="">All locales</option>{/if}
         {#each data.reviewerLocales ?? [] as loc}
           <option value={loc}>{loc}</option>
         {/each}
@@ -68,15 +69,17 @@
     </label>
   </div>
 {:else if data.locale}
-  <p class="locale-label">Locale: <strong>{data.locale}</strong></p>
+  <p class="locale-label">Locale <span class="chip">{data.locale}</span></p>
 {/if}
 
-{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
+{#if errorMsg}<p class="banner banner-error">{errorMsg}</p>{/if}
 
 {#if loading}
-  <p>Loading…</p>
+  <div class="empty card"><p>Loading…</p></div>
 {:else if suggestions.length === 0}
-  <p>No pending suggestions{selectedLocale ? ` for ${selectedLocale}` : ''}.</p>
+  <div class="empty card">
+    <p>No pending suggestions{selectedLocale ? ` for ${selectedLocale}` : ''}.</p>
+  </div>
 {:else}
   <div class="cards">
     {#each suggestions as s (s.id)}
@@ -86,33 +89,32 @@
 {/if}
 
 <style>
-  h1 {
-    margin-bottom: 1rem;
-  }
   .locale-picker {
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
   }
   .locale-picker label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     font-weight: 500;
-  }
-  .locale-picker select {
-    margin-left: 0.5rem;
-    padding: 0.3rem 0.5rem;
-    border-radius: 4px;
-    border: 1px solid #d1d5db;
+    font-size: 0.9rem;
   }
   .locale-label {
-    color: #6b7280;
-    margin-bottom: 1rem;
-  }
-  .error {
-    color: #ef4444;
-    font-size: 0.875rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
   .cards {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
     max-width: 640px;
+  }
+  .empty {
+    padding: 2rem;
+    text-align: center;
+    color: var(--muted);
   }
 </style>
