@@ -1,4 +1,4 @@
-import { eq, inArray } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { Elysia, t } from 'elysia'
 import { db } from '$db/index'
 import { roles, suggestionAttribution, users } from '$db/schema'
@@ -43,6 +43,8 @@ export default new Elysia()
         tolgeeSuggestionId: suggestion.id,
         keyId: body.keyId,
         locale: body.locale,
+        text: body.text,
+        languageId,
         authorUserId: user?.id ?? null,
         anonId,
         status: 'pending',
@@ -77,54 +79,37 @@ export default new Elysia()
         }
       }
 
-      let languageId: number | undefined
-      if (query.locale) {
-        const langs = await tolgee.listLanguages()
-        languageId = langs.find((l) => l.tag === query.locale)?.id
-        if (languageId === undefined) return status(400, { error: 'unknown locale' })
-      }
+      const filters = [eq(suggestionAttribution.status, 'pending')]
+      if (query.locale) filters.push(eq(suggestionAttribution.locale, query.locale))
+      if (query.keyId) filters.push(eq(suggestionAttribution.keyId, Number(query.keyId)))
 
-      let page: Awaited<ReturnType<typeof tolgee.listSuggestions>>
-      try {
-        page = await tolgee.listSuggestions({
-          languageId,
-          keyId: query.keyId ? Number(query.keyId) : undefined,
-          cursor: query.cursor,
+      const rows = await db
+        .select({
+          tolgeeSuggestionId: suggestionAttribution.tolgeeSuggestionId,
+          keyId: suggestionAttribution.keyId,
+          locale: suggestionAttribution.locale,
+          text: suggestionAttribution.text,
+          status: suggestionAttribution.status,
+          authorLogin: users.login,
         })
-      } catch {
-        return status(502, { error: 'tolgee unavailable' })
-      }
+        .from(suggestionAttribution)
+        .leftJoin(users, eq(users.id, suggestionAttribution.authorUserId))
+        .where(and(...filters))
 
-      const ids = page.suggestions.map((s) => s.id)
-      const attrs = ids.length
-        ? await db
-            .select({
-              tolgeeSuggestionId: suggestionAttribution.tolgeeSuggestionId,
-              status: suggestionAttribution.status,
-              authorLogin: users.login,
-              anonId: suggestionAttribution.anonId,
-            })
-            .from(suggestionAttribution)
-            .leftJoin(users, eq(users.id, suggestionAttribution.authorUserId))
-            .where(inArray(suggestionAttribution.tolgeeSuggestionId, ids))
-        : []
-
-      const byId = new Map(attrs.map((a) => [a.tolgeeSuggestionId, a]))
       return {
-        suggestions: page.suggestions.map((s) => {
-          const a = byId.get(s.id)
-          return {
-            ...s,
-            attribution: a
-              ? {
-                  author: a.authorLogin ? { login: a.authorLogin } : undefined,
-                  anon: !a.authorLogin,
-                  status: a.status,
-                }
-              : null,
-          }
-        }),
-        nextCursor: page.nextCursor,
+        suggestions: rows.map((r) => ({
+          id: r.tolgeeSuggestionId,
+          keyId: r.keyId,
+          locale: r.locale,
+          translation: r.text,
+          state: 'pending',
+          attribution: {
+            author: r.authorLogin ? { login: r.authorLogin } : undefined,
+            anon: !r.authorLogin,
+            status: r.status,
+          },
+        })),
+        nextCursor: undefined,
       }
     },
     {

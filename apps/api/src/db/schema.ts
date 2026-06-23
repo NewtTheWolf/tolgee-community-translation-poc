@@ -51,6 +51,8 @@ export const suggestionAttribution = pgTable('suggestion_attribution', {
   tolgeeSuggestionId: integer('tolgee_suggestion_id').notNull().unique(),
   keyId: integer('key_id').notNull(),
   locale: text('locale').notNull(),
+  text: text('text'),
+  languageId: integer('language_id'),
   authorUserId: text('author_user_id').references(() => users.id),
   anonId: text('anon_id'),
   status: attributionStatusEnum('status').notNull().default('pending'),

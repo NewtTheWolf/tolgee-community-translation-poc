@@ -14,12 +14,16 @@ mock.module('../src/middleware/auth', () => ({
 }))
 
 let acceptCalled = false
+type AcceptArgs = { keyId: number; languageId: number; suggestionId: number }
+let acceptArgs: AcceptArgs | null = null
 mock.module('../src/lib/tolgee', () => ({
   tolgee: {
-    acceptSuggestion: async () => {
+    acceptSuggestion: async (p: { keyId: number; languageId: number; suggestionId: number }) => {
       acceptCalled = true
+      acceptArgs = p
     },
     declineSuggestion: async () => {},
+    listLanguages: async () => [{ id: 2, tag: 'de', name: 'German', originalName: 'Deutsch' }],
   },
 }))
 
@@ -64,6 +68,8 @@ const ATTR = {
   tolgeeSuggestionId: 42,
   keyId: 9,
   locale: 'de',
+  text: 'Hallo',
+  languageId: 2,
   authorUserId: 'u-author',
   anonId: null,
   status: 'pending',
@@ -83,8 +89,9 @@ describe('POST /suggestions/:id/accept', () => {
     expect(acceptCalled).toBe(false)
   })
 
-  it('reviewer calls tolgee.acceptSuggestion and returns {ok:true}', async () => {
+  it('reviewer calls tolgee.acceptSuggestion with keyId+languageId+suggestionId and returns {ok:true}', async () => {
     acceptCalled = false
+    acceptArgs = null
     currentUser = { id: 'u-reviewer', login: 'reviewer', isAdmin: false }
     dbAttrRow = ATTR
     dbRoleRows = [{ id: 'r1', userId: 'u-reviewer', locale: 'de', role: 'reviewer' }]
@@ -93,5 +100,6 @@ describe('POST /suggestions/:id/accept', () => {
     const body = (await res.json()) as { ok: boolean }
     expect(body.ok).toBe(true)
     expect(acceptCalled).toBe(true)
+    expect(acceptArgs as AcceptArgs | null).toEqual({ keyId: 9, languageId: 2, suggestionId: 42 })
   })
 })

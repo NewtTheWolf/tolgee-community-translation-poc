@@ -4,28 +4,27 @@ import { Elysia } from 'elysia'
 // Mutable auth/role config — set per test before the request
 let currentUser: { id: string; login: string; isAdmin: boolean } | null = null
 let dbRoleRows: { locale: string; role: 'translator' | 'reviewer' }[] = []
+// Pending attribution rows returned by the DB-driven queue query
+let dbAttrRows: Array<Record<string, unknown>> = []
 
 // Auth middleware stub — .as('global') required for derive to propagate in Elysia 1.4
 mock.module('../src/middleware/auth', () => ({
   authMiddleware: new Elysia({ name: 'auth' }).derive(() => ({ user: currentUser })).as('global'),
 }))
 
+// The GET queue no longer hits Tolgee; keep a stub so the route import resolves.
 mock.module('../src/lib/tolgee', () => ({
   tolgee: {
     listLanguages: async () => [{ id: 2, tag: 'de', name: 'German', originalName: 'Deutsch' }],
-    listSuggestions: async () => ({
-      suggestions: [{ id: 555, keyId: 9, languageId: 2, translation: 'Hallo', state: 'ACTIVE' }],
-      nextCursor: undefined,
-    }),
   },
 }))
 mock.module('../src/db/index', () => ({
   db: {
     select: () => ({
       from: () => ({
-        // attribution query: .from(...).leftJoin(...).where()
+        // queue query: .from(...).leftJoin(...).where()
         leftJoin: () => ({
-          where: async () => [],
+          where: async () => dbAttrRows,
         }),
         // roles query: .from(roles).where()
         where: async () => dbRoleRows,
@@ -59,30 +58,61 @@ describe('GET /suggestions — authorization', () => {
   it('200 for a reviewer of the requested locale', async () => {
     currentUser = { id: 'u1', login: 'u', isAdmin: false }
     dbRoleRows = [{ locale: 'de', role: 'reviewer' }]
+    dbAttrRows = []
     expect((await get('?locale=de')).status).toBe(200)
   })
 
   it('200 for an admin even without a locale', async () => {
     currentUser = { id: 'admin', login: 'admin', isAdmin: true }
     dbRoleRows = []
+    dbAttrRows = []
     expect((await get('')).status).toBe(200)
   })
 })
 
 describe('GET /suggestions — payload', () => {
-  it('returns enriched suggestions for a valid locale', async () => {
+  it('shapes pending DB rows into the queue response', async () => {
     currentUser = { id: 'u1', login: 'u', isAdmin: false }
     dbRoleRows = [{ locale: 'de', role: 'reviewer' }]
+    dbAttrRows = [
+      { tolgeeSuggestionId: 555, keyId: 9, locale: 'de', text: 'Hallo', status: 'pending', authorLogin: 'octocat' },
+    ]
     const res = await get('?locale=de')
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { suggestions: Array<{ attribution: unknown }> }
-    expect(body.suggestions).toHaveLength(1)
-    // No matching attribution row → null attribution
-    expect(body.suggestions[0]?.attribution).toBeNull()
+    const body = (await res.json()) as {
+      suggestions: Array<{
+        id: number
+        keyId: number
+        locale: string
+        translation: string
+        state: string
+        attribution: { author?: { login: string }; anon: boolean; status: string }
+      }>
+      nextCursor: unknown
+    }
+    expect(body.suggestions).toEqual([
+      {
+        id: 555,
+        keyId: 9,
+        locale: 'de',
+        translation: 'Hallo',
+        state: 'pending',
+        attribution: { author: { login: 'octocat' }, anon: false, status: 'pending' },
+      },
+    ])
+    expect(body.nextCursor).toBeUndefined()
   })
 
-  it('returns 400 for unknown locale', async () => {
+  it('marks rows without an author login as anonymous', async () => {
     currentUser = { id: 'admin', login: 'admin', isAdmin: true }
-    expect((await get('?locale=xx')).status).toBe(400)
+    dbRoleRows = []
+    dbAttrRows = [
+      { tolgeeSuggestionId: 1, keyId: 2, locale: 'fr', text: 'Bonjour', status: 'pending', authorLogin: null },
+    ]
+    const res = await get('')
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { suggestions: Array<{ attribution: { author?: unknown; anon: boolean } }> }
+    expect(body.suggestions[0]?.attribution.author).toBeUndefined()
+    expect(body.suggestions[0]?.attribution.anon).toBe(true)
   })
 })

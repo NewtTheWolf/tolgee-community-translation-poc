@@ -52,38 +52,21 @@ export class TolgeeClient {
     return { keys: data._embedded?.keys ?? [], nextCursor: data.nextCursor }
   }
 
+  private suggestionPath(p: { languageId: number; keyId: number }): string {
+    return `/languages/${p.languageId}/key/${p.keyId}/suggestion`
+  }
+
   async createSuggestion(p: { keyId: number; languageId: number; text: string }): Promise<TolgeeSuggestion> {
-    const res = await this.send(this.base('/suggestions'), 'POST', {
-      keyId: p.keyId,
-      languageId: p.languageId,
-      translation: p.text,
-    })
+    const res = await this.send(this.base(this.suggestionPath(p)), 'POST', { translation: p.text })
     return (await res.json()) as TolgeeSuggestion
   }
 
-  async listSuggestions(p: { keyId?: number; languageId?: number; cursor?: string; size?: number } = {}) {
-    const qs = new URLSearchParams()
-    if (p.keyId) qs.set('keyId', String(p.keyId))
-    if (p.languageId) qs.set('languageId', String(p.languageId))
-    if (p.cursor) qs.set('cursor', p.cursor)
-    qs.set('size', String(p.size ?? 50))
-    const data = (await this.get(this.base(`/suggestions?${qs}`))) as {
-      _embedded?: { suggestions?: TolgeeSuggestion[] }
-      nextCursor?: string
-    }
-    return { suggestions: data._embedded?.suggestions ?? [], nextCursor: data.nextCursor }
+  async acceptSuggestion(p: { keyId: number; languageId: number; suggestionId: number }): Promise<void> {
+    await this.send(this.base(`${this.suggestionPath(p)}/${p.suggestionId}/accept`), 'PUT')
   }
 
-  async acceptSuggestion(id: number): Promise<void> {
-    await this.send(this.base(`/suggestions/${id}/accept`), 'PUT')
-  }
-
-  async declineSuggestion(id: number): Promise<void> {
-    await this.send(this.base(`/suggestions/${id}/decline`), 'PUT')
-  }
-
-  async setSuggestionActive(id: number, active: boolean): Promise<void> {
-    await this.send(this.base(`/suggestions/${id}/set-active`), 'PUT', { active })
+  async declineSuggestion(p: { keyId: number; languageId: number; suggestionId: number }): Promise<void> {
+    await this.send(this.base(`${this.suggestionPath(p)}/${p.suggestionId}/decline`), 'PUT')
   }
 
   async setTranslation(p: { key: string; language: string; text: string }): Promise<{ translationId: number }> {

@@ -31,7 +31,13 @@ export default new Elysia().use(authMiddleware).post('/suggestions/:id/accept', 
   if (attr.status !== 'pending') return { ok: true, alreadyResolved: true }
 
   try {
-    await tolgee.acceptSuggestion(suggestionId)
+    let languageId = attr.languageId
+    if (languageId === null) {
+      const langs = await tolgee.listLanguages()
+      languageId = langs.find((l) => l.tag === attr.locale)?.id ?? null
+      if (languageId === null) return status(502, { error: 'tolgee unavailable' })
+    }
+    await tolgee.acceptSuggestion({ keyId: attr.keyId, languageId, suggestionId })
   } catch {
     return status(502, { error: 'tolgee unavailable' })
   }

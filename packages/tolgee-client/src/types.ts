@@ -31,9 +31,11 @@ export interface TolgeeConfig {
 
 export interface TolgeeSuggestion {
   id: number
-  keyId: number
   languageId: number
+  keyId: number
   translation: string
   state: string
-  author?: { id: number; name?: string }
+  author?: { username?: string; name?: string; avatar?: string }
+  isPlural?: boolean
+  createdAt?: number
 }

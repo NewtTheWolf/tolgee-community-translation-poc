@@ -44,10 +44,11 @@ describe('TolgeeClient.listTranslations', () => {
 })
 
 describe('TolgeeClient.createSuggestion', () => {
-  it('POSTs translation suggestion and maps response', async () => {
-    const f = mock(async (_url: string, init: RequestInit) => {
+  it('POSTs to the per-language/key path and maps response', async () => {
+    const f = mock(async (url: string, init: RequestInit) => {
+      expect(url).toBe('https://t.test/v2/projects/1/languages/2/key/9/suggestion')
       expect(init.method).toBe('POST')
-      expect(JSON.parse(String(init.body))).toEqual({ keyId: 9, languageId: 2, translation: 'Hallo' })
+      expect(JSON.parse(String(init.body))).toEqual({ translation: 'Hallo' })
       return new Response(JSON.stringify({ id: 100, keyId: 9, languageId: 2, translation: 'Hallo', state: 'ACTIVE' }), {
         status: 200,
       })
@@ -59,12 +60,23 @@ describe('TolgeeClient.createSuggestion', () => {
 })
 
 describe('TolgeeClient.acceptSuggestion', () => {
-  it('PUTs accept and resolves void', async () => {
+  it('PUTs the per-language/key accept path and resolves void', async () => {
     const f = mock(async (url: string, init: RequestInit) => {
-      expect(url).toContain('/suggestions/100/accept')
+      expect(url).toBe('https://t.test/v2/projects/1/languages/2/key/9/suggestion/100/accept')
       expect(init.method).toBe('PUT')
       return new Response('', { status: 200 })
     }) as unknown as typeof fetch
-    await new TolgeeClient(cfg, f).acceptSuggestion(100)
+    await new TolgeeClient(cfg, f).acceptSuggestion({ keyId: 9, languageId: 2, suggestionId: 100 })
+  })
+})
+
+describe('TolgeeClient.declineSuggestion', () => {
+  it('PUTs the per-language/key decline path and resolves void', async () => {
+    const f = mock(async (url: string, init: RequestInit) => {
+      expect(url).toBe('https://t.test/v2/projects/1/languages/2/key/9/suggestion/100/decline')
+      expect(init.method).toBe('PUT')
+      return new Response('', { status: 200 })
+    }) as unknown as typeof fetch
+    await new TolgeeClient(cfg, f).declineSuggestion({ keyId: 9, languageId: 2, suggestionId: 100 })
   })
 })
