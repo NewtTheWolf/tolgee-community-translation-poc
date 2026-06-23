@@ -62,6 +62,22 @@ export const suggestionAttribution = pgTable('suggestion_attribution', {
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
 })
 
+// One vote per logged-in user per suggestion (+1 up / -1 down); used to bump
+// suggestions in the queue. Reads are public; only authenticated users vote.
+export const suggestionVotes = pgTable(
+  'suggestion_votes',
+  {
+    id: text('id').primaryKey(),
+    tolgeeSuggestionId: bigint('tolgee_suggestion_id', { mode: 'number' }).notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    value: integer('value').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique('suggestion_votes_user_suggestion').on(t.userId, t.tolgeeSuggestionId)],
+)
+
 export const auditLog = pgTable('audit_log', {
   id: text('id').primaryKey(),
   actorUserId: text('actor_user_id').references(() => users.id),

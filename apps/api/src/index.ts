@@ -19,6 +19,7 @@ import languages from './routes/languages'
 import me from './routes/me'
 import suggestionAccept from './routes/suggestions/[id]/accept'
 import suggestionDecline from './routes/suggestions/[id]/decline'
+import suggestionVote from './routes/suggestions/[id]/vote'
 import suggestions from './routes/suggestions/index'
 import suggestionsMt from './routes/suggestions/mt'
 import suggestionsTm from './routes/suggestions/tm'
@@ -50,6 +51,7 @@ export function createApp() {
     .use(suggestions)
     .use(suggestionAccept)
     .use(suggestionDecline)
+    .use(suggestionVote)
     .use(suggestionsMt)
     .use(suggestionsTm)
     .use(applications)

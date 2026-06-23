@@ -13,7 +13,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: ct-api:v2
+          image: ct-api:v3
           imagePullPolicy: Never
           workingDir: /app/apps/api
           command: ['bun', 'src/db/migrate.ts']
