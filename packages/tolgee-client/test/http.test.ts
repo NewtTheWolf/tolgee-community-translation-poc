@@ -14,7 +14,9 @@ describe('fetchWithRetry', () => {
   })
 
   it('throws TolgeeApiError on non-retryable 400', async () => {
-    const f = mock(async () => new Response(JSON.stringify({ code: 'bad' }), { status: 400 })) as unknown as typeof fetch
+    const f = mock(
+      async () => new Response(JSON.stringify({ code: 'bad' }), { status: 400 }),
+    ) as unknown as typeof fetch
     await expect(fetchWithRetry('http://x', {}, { fetchImpl: f })).rejects.toBeInstanceOf(TolgeeApiError)
   })
 

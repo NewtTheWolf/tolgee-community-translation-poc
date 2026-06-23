@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia'
-import { authMiddleware } from '$middleware/auth'
 import { tolgee } from '$lib/tolgee'
+import { authMiddleware } from '$middleware/auth'
 
 export default new Elysia().use(authMiddleware).get(
   '/suggestions/tm',

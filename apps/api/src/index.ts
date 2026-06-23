@@ -1,11 +1,11 @@
-import { Elysia } from 'elysia'
 import { cors } from '@elysiajs/cors'
 import { openapi } from '@elysiajs/openapi'
+import { Elysia } from 'elysia'
 import { fsr } from 'elysia-fsr'
-import { env, allowedOrigins } from '$lib/env'
+import { connectDB } from '$db/index'
+import { allowedOrigins, env } from '$lib/env'
 import { logger } from '$lib/logger'
 import { loggerMiddleware } from '$middleware/logger'
-import { connectDB } from '$db/index'
 
 await connectDB(env.DATABASE_URL)
 

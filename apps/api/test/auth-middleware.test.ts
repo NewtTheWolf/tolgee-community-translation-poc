@@ -1,9 +1,8 @@
-import { describe, expect, it, beforeAll, afterAll } from 'bun:test'
-import { Elysia } from 'elysia'
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { eq } from 'drizzle-orm'
-import { users } from '../src/db/schema'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import { Elysia } from 'elysia'
+import postgres from 'postgres'
 // Import via tsconfig path aliases instead of the relative paths that other
 // test files mock. Bun keys relative and alias imports separately in its module
 // registry, so these aliases always resolve to the real implementations even
@@ -12,6 +11,7 @@ import { users } from '../src/db/schema'
 import { connectDB } from '$db/index'
 import { signSession } from '$lib/jwt'
 import { authMiddleware } from '$middleware/auth'
+import { users } from '../src/db/schema'
 
 // Use a direct postgres connection for seed/cleanup so this test is immune to
 // mock.module('../src/db/index') leaks from other test files.
@@ -51,9 +51,7 @@ describe('authMiddleware', () => {
 
   it('propagates user to consumer route with valid session cookie', async () => {
     const token = await signSession({ sub: TEST_USER_ID, login: TEST_LOGIN })
-    const app = new Elysia()
-      .use(authMiddleware)
-      .get('/whoami', ({ user }) => ({ user }))
+    const app = new Elysia().use(authMiddleware).get('/whoami', ({ user }) => ({ user }))
 
     const res = await app.handle(
       new Request('http://localhost/whoami', {
@@ -64,14 +62,12 @@ describe('authMiddleware', () => {
     expect(res.status).toBe(200)
     const body = (await res.json()) as { user: { id: string; login: string } | null }
     expect(body.user).not.toBeNull()
-    expect(body.user!.id).toBe(TEST_USER_ID)
-    expect(body.user!.login).toBe(TEST_LOGIN)
+    expect(body.user?.id).toBe(TEST_USER_ID)
+    expect(body.user?.login).toBe(TEST_LOGIN)
   })
 
   it('returns user: null for missing session cookie', async () => {
-    const app = new Elysia()
-      .use(authMiddleware)
-      .get('/whoami', ({ user }) => ({ user }))
+    const app = new Elysia().use(authMiddleware).get('/whoami', ({ user }) => ({ user }))
 
     const res = await app.handle(new Request('http://localhost/whoami'))
     expect(res.status).toBe(200)

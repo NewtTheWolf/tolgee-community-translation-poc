@@ -10,40 +10,31 @@ let currentUser: { id: string; login: string; isAdmin: boolean } | null = {
 
 // Auth middleware stub — .as('global') required for derive to propagate in Elysia 1.4
 mock.module('../src/middleware/auth', () => ({
-  authMiddleware: new Elysia({ name: 'auth' })
-    .derive(() => ({ user: currentUser }))
-    .as('global'),
+  authMiddleware: new Elysia({ name: 'auth' }).derive(() => ({ user: currentUser })).as('global'),
 }))
 
 // Per-test db config
 let dbAppRow: unknown | null = null
 let dbRoleRows: unknown[] = []
-let lastInsertTable: string | null = null
 let insertCalled = false
 let updateCalled = false
-
-// Track which table is being queried in from()
-let lastFromTable: unknown = null
 
 mock.module('../src/db/index', () => ({
   db: {
     select: () => ({
-      from: (table: unknown) => {
-        lastFromTable = table
-        return {
-          where: () => ({
-            // applications query uses .limit(1)
-            limit: async () => (dbAppRow ? [dbAppRow] : []),
-            // roles query has no .limit() — accessed as a Promise directly
-            then: (resolve: (rows: unknown[]) => unknown, reject: (e: unknown) => unknown) =>
-              Promise.resolve(dbRoleRows).then(resolve, reject),
-          }),
-        }
-      },
+      from: () => ({
+        where: () => ({
+          // applications query uses .limit(1)
+          limit: async () => (dbAppRow ? [dbAppRow] : []),
+          // roles query has no .limit() — accessed as a Promise directly.
+          // biome-ignore lint/suspicious/noThenProperty: intentional thenable to mock an awaited Drizzle query builder
+          then: (resolve: (rows: unknown[]) => unknown, reject: (e: unknown) => unknown) =>
+            Promise.resolve(dbRoleRows).then(resolve, reject),
+        }),
+      }),
     }),
-    insert: (table: unknown) => {
+    insert: () => {
       insertCalled = true
-      lastInsertTable = table === null ? 'unknown' : String((table as { _: { name?: string } })?._?.name ?? 'unknown')
       return {
         values: () => ({
           onConflictDoNothing: async () => {},
@@ -82,7 +73,6 @@ const PENDING_APP = {
 describe('POST /applications', () => {
   it('member creates application → db.insert called, returns { id: string }', async () => {
     insertCalled = false
-    lastInsertTable = null
     currentUser = { id: 'u-member', login: 'member', isAdmin: false }
 
     const res = await applicationsRoute.handle(
@@ -102,7 +92,6 @@ describe('POST /applications', () => {
 describe('POST /applications/:id/approve', () => {
   it('reviewer-for-locale approves → role inserted, returns { ok: true }', async () => {
     insertCalled = false
-    lastInsertTable = null
     updateCalled = false
     currentUser = { id: 'u-reviewer', login: 'reviewer', isAdmin: false }
     dbAppRow = PENDING_APP

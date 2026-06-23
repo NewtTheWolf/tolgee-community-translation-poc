@@ -1,8 +1,8 @@
-import { Elysia } from 'elysia'
 import { eq } from 'drizzle-orm'
-import { verifySession } from '$lib/jwt'
+import { Elysia } from 'elysia'
 import { db } from '$db/index'
-import { users, roles } from '$db/schema'
+import { roles, users } from '$db/schema'
+import { verifySession } from '$lib/jwt'
 import { effectiveRoleFor, roleSatisfies } from '$lib/roles'
 
 export type CurrentUser = { id: string; login: string; isAdmin: boolean }

@@ -26,7 +26,13 @@ export const promotionRepo: PromotionRepo = {
     const rows = await db
       .select({ c: count() })
       .from(suggestionAttribution)
-      .where(and(eq(suggestionAttribution.authorUserId, userId), eq(suggestionAttribution.locale, locale), eq(suggestionAttribution.status, 'accepted')))
+      .where(
+        and(
+          eq(suggestionAttribution.authorUserId, userId),
+          eq(suggestionAttribution.locale, locale),
+          eq(suggestionAttribution.status, 'accepted'),
+        ),
+      )
     return rows[0]?.c ?? 0
   },
   async getThreshold() {
@@ -34,12 +40,24 @@ export const promotionRepo: PromotionRepo = {
     return rows[0]?.t ?? 5
   },
   async hasTranslatorRole(userId, locale) {
-    const rows = await db.select({ id: roles.id }).from(roles).where(and(eq(roles.userId, userId), eq(roles.locale, locale), eq(roles.role, 'translator')))
+    const rows = await db
+      .select({ id: roles.id })
+      .from(roles)
+      .where(and(eq(roles.userId, userId), eq(roles.locale, locale), eq(roles.role, 'translator')))
     return rows.length > 0
   },
   async grantTranslator(userId, locale) {
-    await db.insert(roles).values({ id: id(), userId, locale, role: 'translator', grantedBy: null }).onConflictDoNothing()
-    await writeAudit({ actorUserId: null, action: 'role.auto_promote', targetType: 'user', targetId: userId, meta: { locale, role: 'translator' } })
+    await db
+      .insert(roles)
+      .values({ id: id(), userId, locale, role: 'translator', grantedBy: null })
+      .onConflictDoNothing()
+    await writeAudit({
+      actorUserId: null,
+      action: 'role.auto_promote',
+      targetType: 'user',
+      targetId: userId,
+      meta: { locale, role: 'translator' },
+    })
   },
 }
 

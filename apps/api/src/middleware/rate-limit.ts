@@ -1,4 +1,4 @@
-import { Elysia, type Cookie } from 'elysia'
+import { type Cookie, Elysia } from 'elysia'
 import { id } from '$lib/ulid'
 
 // Elysia's cookie jar in plugin scope: Record<string, Cookie<unknown>>.
@@ -17,13 +17,16 @@ export function ensureAnonId(cookie: CookieJar): string {
   const existing = cookie.anon_id?.value
   if (typeof existing === 'string' && existing.length > 0) return existing
   const value = id()
+  // The slot is always present via the Proxy-backed jar (see note above); bind it
+  // once so the runtime guarantee is expressed without scattered non-null assertions.
+  const slot = cookie.anon_id
+  if (!slot) throw new Error('cookie jar not initialised — ensureAnonId requires global-scope hook')
   // Cookie<unknown>.value setter accepts unknown; httpOnly etc. are direct properties.
-  // The slot is always present via the Proxy — non-null assertions are safe here.
-  cookie.anon_id!.value = value
-  cookie.anon_id!.httpOnly = true
-  cookie.anon_id!.path = '/'
-  cookie.anon_id!.maxAge = 60 * 60 * 24 * 365
-  cookie.anon_id!.sameSite = 'lax'
+  slot.value = value
+  slot.httpOnly = true
+  slot.path = '/'
+  slot.maxAge = 60 * 60 * 24 * 365
+  slot.sameSite = 'lax'
   return value
 }
 

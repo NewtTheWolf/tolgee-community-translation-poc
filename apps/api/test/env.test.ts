@@ -3,7 +3,16 @@ import { parseEnv } from '../src/lib/env'
 
 describe('parseEnv', () => {
   it('rejects short JWT_SECRET', () => {
-    expect(() => parseEnv({ JWT_SECRET: 'short', DATABASE_URL: 'x', BASE_URL: 'http://x', TOLGEE_API_URL: 'http://x', TOLGEE_PROJECT_ID: '1', TOLGEE_API_KEY: 'k' })).toThrow()
+    expect(() =>
+      parseEnv({
+        JWT_SECRET: 'short',
+        DATABASE_URL: 'x',
+        BASE_URL: 'http://x',
+        TOLGEE_API_URL: 'http://x',
+        TOLGEE_PROJECT_ID: '1',
+        TOLGEE_API_KEY: 'k',
+      }),
+    ).toThrow()
   })
 
   it('accepts a valid env', () => {

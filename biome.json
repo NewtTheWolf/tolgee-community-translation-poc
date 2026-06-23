@@ -1,7 +1,9 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
-  "files": { "includes": ["apps/**/*.ts", "packages/**/*.ts"], "experimentalScannerIgnores": ["**/.svelte-kit", "**/node_modules"] },
+  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+  "files": {
+    "includes": ["apps/**/*.ts", "packages/**/*.ts", "!**/.svelte-kit", "!**/node_modules"]
+  },
   "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 120 },
   "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded", "trailingCommas": "all" } },
-  "linter": { "enabled": true, "rules": { "recommended": true } }
+  "linter": { "enabled": true }
 }

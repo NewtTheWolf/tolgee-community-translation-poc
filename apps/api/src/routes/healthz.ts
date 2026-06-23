@@ -1,7 +1,7 @@
-import { Elysia } from 'elysia'
-import { tolgee } from '$lib/tolgee'
-import { db } from '$db/index'
 import { sql } from 'drizzle-orm'
+import { Elysia } from 'elysia'
+import { db } from '$db/index'
+import { tolgee } from '$lib/tolgee'
 
 export default new Elysia().get('/healthz', async ({ set }) => {
   const checks: Record<string, boolean> = { db: false, tolgee: false }

@@ -1,6 +1,6 @@
-import { SignJWT, jwtVerify } from 'jose'
 import { Type } from '@sinclair/typebox'
 import { Value } from '@sinclair/typebox/value'
+import { jwtVerify, SignJWT } from 'jose'
 import { env } from './env'
 
 const PayloadSchema = Type.Object({

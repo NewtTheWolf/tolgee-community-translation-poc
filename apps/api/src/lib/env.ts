@@ -1,5 +1,5 @@
-import { Type } from '@sinclair/typebox'
 import type { StaticDecode } from '@sinclair/typebox'
+import { Type } from '@sinclair/typebox'
 import { Value } from '@sinclair/typebox/value'
 
 const EnvSchema = Type.Object({
@@ -33,5 +33,10 @@ export function allowedOrigins(): string[] {
 }
 
 export function adminLogins(): Set<string> {
-  return new Set((env.ADMIN_GITHUB_LOGINS ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean))
+  return new Set(
+    (env.ADMIN_GITHUB_LOGINS ?? '')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  )
 }

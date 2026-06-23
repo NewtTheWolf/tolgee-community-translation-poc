@@ -23,9 +23,9 @@ describe('rateLimit', () => {
 
     // Extract cookie value for the second request
     // set-cookie format: "anon_id=<value>; ..."
-    const match = setCookie!.match(/anon_id=([^;]+)/)
+    const match = setCookie?.match(/anon_id=([^;]+)/)
     expect(match).not.toBeNull()
-    const anonId = match![1]
+    const anonId = match?.[1]
 
     // Second request carrying the issued cookie
     const res2 = await app.handle(

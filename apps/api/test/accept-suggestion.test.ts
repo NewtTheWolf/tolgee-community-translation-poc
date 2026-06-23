@@ -10,15 +10,15 @@ let currentUser: { id: string; login: string; isAdmin: boolean } | null = {
 
 // Auth middleware stub — .as('global') required for derive to propagate in Elysia 1.4
 mock.module('../src/middleware/auth', () => ({
-  authMiddleware: new Elysia({ name: 'auth' })
-    .derive(() => ({ user: currentUser }))
-    .as('global'),
+  authMiddleware: new Elysia({ name: 'auth' }).derive(() => ({ user: currentUser })).as('global'),
 }))
 
 let acceptCalled = false
 mock.module('../src/lib/tolgee', () => ({
   tolgee: {
-    acceptSuggestion: async () => { acceptCalled = true },
+    acceptSuggestion: async () => {
+      acceptCalled = true
+    },
     declineSuggestion: async () => {},
   },
 }))
@@ -34,7 +34,8 @@ mock.module('../src/db/index', () => ({
         where: () => ({
           // attribution query uses .limit(1)
           limit: async () => (dbAttrRow ? [dbAttrRow] : []),
-          // roles query has no .limit() — accessed as a Promise directly
+          // roles query has no .limit() — accessed as a Promise directly.
+          // biome-ignore lint/suspicious/noThenProperty: intentional thenable to mock an awaited Drizzle query builder
           then: (resolve: (rows: unknown[]) => unknown, reject: (e: unknown) => unknown) =>
             Promise.resolve(dbRoleRows).then(resolve, reject),
         }),
@@ -77,9 +78,7 @@ describe('POST /suggestions/:id/accept', () => {
     currentUser = { id: 'u-nobody', login: 'nobody', isAdmin: false }
     dbAttrRow = ATTR
     dbRoleRows = [] // no roles for this user
-    const res = await acceptRoute.handle(
-      new Request('http://localhost/suggestions/42/accept', { method: 'POST' }),
-    )
+    const res = await acceptRoute.handle(new Request('http://localhost/suggestions/42/accept', { method: 'POST' }))
     expect(res.status).toBe(403)
     expect(acceptCalled).toBe(false)
   })
@@ -89,9 +88,7 @@ describe('POST /suggestions/:id/accept', () => {
     currentUser = { id: 'u-reviewer', login: 'reviewer', isAdmin: false }
     dbAttrRow = ATTR
     dbRoleRows = [{ id: 'r1', userId: 'u-reviewer', locale: 'de', role: 'reviewer' }]
-    const res = await acceptRoute.handle(
-      new Request('http://localhost/suggestions/42/accept', { method: 'POST' }),
-    )
+    const res = await acceptRoute.handle(new Request('http://localhost/suggestions/42/accept', { method: 'POST' }))
     expect(res.status).toBe(200)
     const body = (await res.json()) as { ok: boolean }
     expect(body.ok).toBe(true)

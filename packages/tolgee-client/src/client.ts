@@ -113,7 +113,9 @@ export class TolgeeClient {
       keyId: p.keyId,
       targetLanguageId: p.targetLanguageId,
     })
-    const data = (await res.json()) as { _embedded?: { translationMemoryItems?: { targetText: string; similarity: number }[] } }
+    const data = (await res.json()) as {
+      _embedded?: { translationMemoryItems?: { targetText: string; similarity: number }[] }
+    }
     return (data._embedded?.translationMemoryItems ?? []).map((i) => ({ text: i.targetText, similarity: i.similarity }))
   }
 }

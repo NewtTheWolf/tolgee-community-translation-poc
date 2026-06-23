@@ -4,7 +4,10 @@ const created: unknown[] = []
 mock.module('../src/lib/tolgee', () => ({
   tolgee: {
     listLanguages: async () => [{ id: 2, tag: 'de', name: 'German', originalName: 'Deutsch' }],
-    createSuggestion: async (p: object) => { created.push(p); return { id: 555 } },
+    createSuggestion: async (p: object) => {
+      created.push(p)
+      return { id: 555 }
+    },
   },
 }))
 mock.module('../src/db/index', () => ({

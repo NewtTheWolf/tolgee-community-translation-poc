@@ -1,12 +1,12 @@
-import { Elysia, t } from 'elysia'
 import { eq } from 'drizzle-orm'
-import { github } from '../github'
-import { env, adminLogins } from '$lib/env'
+import { Elysia, t } from 'elysia'
 import { db } from '$db/index'
 import { users } from '$db/schema'
-import { id } from '$lib/ulid'
-import { signSession } from '$lib/jwt'
 import { writeAudit } from '$lib/audit'
+import { adminLogins, env } from '$lib/env'
+import { signSession } from '$lib/jwt'
+import { id } from '$lib/ulid'
+import { github } from '../github'
 
 export default new Elysia().get(
   '/auth/github/callback',
@@ -28,17 +28,38 @@ export default new Elysia().get(
       userId = existing.id
       await db
         .update(users)
-        .set({ login: gh.login, name: gh.name, avatarUrl: gh.avatar_url, isAdmin: existing.isAdmin || isAdmin, lastSeenAt: new Date() })
+        .set({
+          login: gh.login,
+          name: gh.name,
+          avatarUrl: gh.avatar_url,
+          isAdmin: existing.isAdmin || isAdmin,
+          lastSeenAt: new Date(),
+        })
         .where(eq(users.id, userId))
     } else {
       userId = id()
-      await db.insert(users).values({ id: userId, githubId: gh.id, login: gh.login, name: gh.name, avatarUrl: gh.avatar_url, isAdmin })
-      await writeAudit({ actorUserId: userId, action: 'user.register', targetType: 'user', targetId: userId, meta: { login: gh.login } })
+      await db
+        .insert(users)
+        .values({ id: userId, githubId: gh.id, login: gh.login, name: gh.name, avatarUrl: gh.avatar_url, isAdmin })
+      await writeAudit({
+        actorUserId: userId,
+        action: 'user.register',
+        targetType: 'user',
+        targetId: userId,
+        meta: { login: gh.login },
+      })
     }
 
     const token = await signSession({ sub: userId, login: gh.login })
-    cookie.session!.set({ value: token, httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7, sameSite: 'lax', secure: env.NODE_ENV === 'production' })
-    cookie.oauth_state!.remove()
+    cookie.session?.set({
+      value: token,
+      httpOnly: true,
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: 'lax',
+      secure: env.NODE_ENV === 'production',
+    })
+    cookie.oauth_state?.remove()
     return redirect(env.WEB_BASE_URL ?? 'http://localhost:5173')
   },
   { query: t.Object({ code: t.Optional(t.String()), state: t.Optional(t.String()) }) },

@@ -13,16 +13,14 @@ let currentUser: { id: string; login: string; isAdmin: boolean } | null = {
 let dbRoleRows: { id: string; userId: string; locale: string; role: 'translator' | 'reviewer' }[] = []
 
 // Auth middleware stub with requireRole macro — .as('global') required for derive to propagate in Elysia 1.4
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const requireRoleMacro = (cfg: { locale: 'param' | 'body' | 'query'; min: 'translator' | 'reviewer' }) => ({
-  resolve(ctx: any) {
+  resolve(ctx: unknown) {
     const { user, params, body, query, status } = ctx as {
       user: typeof currentUser
       params: Record<string, string>
       body: Record<string, string>
       query: Record<string, string>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      status: (code: number, body: unknown) => any
+      status: (code: number, body: unknown) => unknown
     }
     if (!user) return status(401, { error: 'authentication required' })
     const p = params as Record<string, string>
@@ -40,12 +38,12 @@ mock.module('../src/middleware/auth', () => ({
   authMiddleware: new Elysia({ name: 'auth' })
     .derive(() => ({ user: currentUser }))
     .as('global')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: Elysia's macro() generic signature is too complex to satisfy for a test stub
     .macro({ requireRole: requireRoleMacro } as any),
 }))
 
 let setTranslationCalled = false
-let setTranslationResult: { translationId: number } = { translationId: 99 }
+const setTranslationResult: { translationId: number } = { translationId: 99 }
 mock.module('../src/lib/tolgee', () => ({
   tolgee: {
     setTranslation: async () => {
