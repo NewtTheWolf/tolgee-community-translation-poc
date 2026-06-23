@@ -1,0 +1,21 @@
+# Runs Drizzle migrations against ct-postgres using the API image, then exits.
+# Re-apply (after deleting the old Job) on each release that adds migrations.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ct-migrate
+  namespace: tabularis
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: ct-api:v1
+          imagePullPolicy: Never
+          workingDir: /app/apps/api
+          command: ['bun', 'src/db/migrate.ts']
+          envFrom:
+            - secretRef: { name: ct-secrets }

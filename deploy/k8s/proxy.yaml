@@ -1,0 +1,68 @@
+# Single-origin reverse proxy: /api/* -> ct-api (prefix stripped), everything
+# else -> ct-frontend. Exposed via a LoadBalancer on :80 (k3s klipper binds the
+# host port). Cloudflare terminates TLS and talks HTTP to this origin.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ct-proxy-caddy
+  namespace: tabularis
+data:
+  Caddyfile: |
+    {
+      admin off
+      auto_https off
+    }
+    :80 {
+      handle_path /api/* {
+        reverse_proxy ct-api:3000
+      }
+      handle {
+        reverse_proxy ct-frontend:3000
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ct-proxy
+  namespace: tabularis
+  labels: { app: ct-proxy }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: ct-proxy }
+  template:
+    metadata:
+      labels: { app: ct-proxy }
+      annotations:
+        # bump to force a rollout when the Caddyfile changes
+        configHash: v1
+    spec:
+      containers:
+        - name: caddy
+          image: caddy:2-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: caddyfile
+              mountPath: /etc/caddy
+          readinessProbe:
+            tcpSocket: { port: 80 }
+            initialDelaySeconds: 3
+            periodSeconds: 10
+      volumes:
+        - name: caddyfile
+          configMap: { name: ct-proxy-caddy }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ct-proxy
+  namespace: tabularis
+spec:
+  type: LoadBalancer
+  selector: { app: ct-proxy }
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ct-api
+  namespace: tabularis
+  labels: { app: ct-api }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: ct-api }
+  template:
+    metadata:
+      labels: { app: ct-api }
+    spec:
+      containers:
+        - name: api
+          image: ct-api:v1
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef: { name: ct-secrets }
+          readinessProbe:
+            tcpSocket: { port: 3000 }
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 3000 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ct-api
+  namespace: tabularis
+spec:
+  selector: { app: ct-api }
+  ports:
+    - port: 3000
+      targetPort: 3000

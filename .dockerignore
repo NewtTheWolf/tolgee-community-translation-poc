@@ -1,0 +1,13 @@
+**/node_modules
+**/.svelte-kit
+**/build
+**/dist
+**/.turbo
+.git
+.github
+docs
+.superpowers
+**/.env
+**/*.test.ts
+**/test
+README.md
