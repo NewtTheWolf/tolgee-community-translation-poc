@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core'
+import { bigint, boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core'
 
 export const roleEnum = pgEnum('role', ['translator', 'reviewer'])
 export const applicationStatusEnum = pgEnum('application_status', ['pending', 'approved', 'rejected'])
@@ -7,7 +7,8 @@ export const attributionStatusEnum = pgEnum('attribution_status', ['pending', 'a
 
 export const users = pgTable('users', {
   id: text('id').primaryKey(),
-  githubId: integer('github_id').notNull().unique(),
+  // Tolgee/GitHub numeric IDs exceed int4 range — use bigint.
+  githubId: bigint('github_id', { mode: 'number' }).notNull().unique(),
   login: text('login').notNull(),
   name: text('name'),
   avatarUrl: text('avatar_url'),
@@ -48,11 +49,11 @@ export const applications = pgTable('applications', {
 
 export const suggestionAttribution = pgTable('suggestion_attribution', {
   id: text('id').primaryKey(),
-  tolgeeSuggestionId: integer('tolgee_suggestion_id').notNull().unique(),
-  keyId: integer('key_id').notNull(),
+  tolgeeSuggestionId: bigint('tolgee_suggestion_id', { mode: 'number' }).notNull().unique(),
+  keyId: bigint('key_id', { mode: 'number' }).notNull(),
   locale: text('locale').notNull(),
   text: text('text'),
-  languageId: integer('language_id'),
+  languageId: bigint('language_id', { mode: 'number' }),
   authorUserId: text('author_user_id').references(() => users.id),
   anonId: text('anon_id'),
   status: attributionStatusEnum('status').notNull().default('pending'),
