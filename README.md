@@ -10,7 +10,8 @@ front of the [Tolgee](https://tolgee.io) REST API: it adds accountless
 suggestions, GitHub authentication, per-language roles, contributor attribution,
 and an application/approval workflow — but it never mirrors translation content
 locally. Every translation read and write proxies straight to Tolgee, including
-Tolgee's native suggestion workflow (create / accept / decline / set-active).
+Tolgee's native suggestion workflow (create / accept / decline); accepting a
+suggestion applies it as the translation in Tolgee.
 
 ## Architecture
 
@@ -39,6 +40,13 @@ do everything and manage roles/settings. Anonymous visitors may browse and
 suggest, but never accept/apply. Translators can also self-promote via repeated
 accepted suggestions (auto-promotion threshold, configurable in admin settings)
 or by applying for a role.
+
+Anonymous suggestion submission is throttled by a best-effort, in-memory rate
+limiter keyed on an `anon_id` cookie. It deters casual flooding but is not a hard
+quota (a client that discards its cookie gets a fresh bucket); the authoritative
+limit is whatever your Tolgee plan enforces upstream. Run a single API instance
+or move the limiter to a shared store (e.g. Redis) if you need it to hold across
+processes.
 
 ## Prerequisites
 
@@ -84,7 +92,7 @@ bun run dev        # turbo: API (:3000) + frontend (:5173) together
 Open http://localhost:5173. Sign in with a GitHub account listed in
 `ADMIN_GITHUB_LOGINS` to reach the admin panel, grant yourself a `reviewer` role
 for a locale, then test the full flow: submit an anonymous suggestion, accept it
-in **Review**, and confirm the translation turns up as reviewed in Tolgee.
+in **Review**, and confirm the suggestion is applied to the translation in Tolgee.
 
 ## Scripts
 
