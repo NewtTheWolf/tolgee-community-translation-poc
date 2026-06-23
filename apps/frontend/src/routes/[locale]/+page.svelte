@@ -3,8 +3,13 @@
   import SuggestForm from '$lib/components/SuggestForm.svelte'
 
   let { data } = $props()
-  let searchInput = $state(data.search ?? '')
+  let searchInput = $state('')
   let activeKeyId = $state<number | null>(null)
+
+  // Re-seed local input when the loaded data changes (e.g. navigating locale/search).
+  $effect(() => {
+    searchInput = data.search ?? ''
+  })
 
   function onSearch(e: Event) {
     e.preventDefault()
@@ -20,12 +25,7 @@
 <h1>{data.locale} Translations</h1>
 
 <form onsubmit={onSearch} class="search-form">
-  <input
-    type="search"
-    bind:value={searchInput}
-    placeholder="Search keys…"
-    aria-label="Search translation keys"
-  />
+  <input type="search" bind:value={searchInput} placeholder="Search keys…" aria-label="Search translation keys" />
   <button type="submit">Search</button>
 </form>
 
@@ -46,7 +46,9 @@
         {@const trans = key.translations?.[data.locale]}
         <tr>
           <td class="key-name">{key.keyName ?? '—'}</td>
-          <td class="translation-text">{#if trans?.text}{trans.text}{:else}<em>untranslated</em>{/if}</td>
+          <td class="translation-text"
+            >{#if trans?.text}{trans.text}{:else}<em>untranslated</em>{/if}</td
+          >
           <td class="state">{trans?.state ?? '—'}</td>
           <td>
             <button onclick={() => toggleSuggest(key.keyId)} class="suggest-btn">
@@ -67,7 +69,9 @@
 {/if}
 
 <style>
-  h1 { margin: 0.5rem 0; }
+  h1 {
+    margin: 0.5rem 0;
+  }
   .search-form {
     display: flex;
     gap: 0.5rem;
@@ -93,15 +97,28 @@
     border-collapse: collapse;
     font-size: 0.9rem;
   }
-  th, td {
+  th,
+  td {
     padding: 0.6rem 0.75rem;
     text-align: left;
     border-bottom: 1px solid #e5e7eb;
   }
-  th { font-weight: 600; background: #f9fafb; }
-  .key-name { font-family: monospace; font-size: 0.8rem; color: #374151; }
-  .translation-text { max-width: 400px; }
-  .state { color: #6b7280; font-size: 0.8rem; }
+  th {
+    font-weight: 600;
+    background: #f9fafb;
+  }
+  .key-name {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #374151;
+  }
+  .translation-text {
+    max-width: 400px;
+  }
+  .state {
+    color: #6b7280;
+    font-size: 0.8rem;
+  }
   .suggest-btn {
     padding: 0.3rem 0.75rem;
     border: 1px solid #3b82f6;
@@ -111,6 +128,10 @@
     cursor: pointer;
     white-space: nowrap;
   }
-  .suggest-btn:hover { background: #eff6ff; }
-  .suggest-row td { background: #f9fafb; }
+  .suggest-btn:hover {
+    background: #eff6ff;
+  }
+  .suggest-row td {
+    background: #f9fafb;
+  }
 </style>

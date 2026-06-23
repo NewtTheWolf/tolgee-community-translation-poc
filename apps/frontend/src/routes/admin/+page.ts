@@ -1,6 +1,6 @@
-import type { PageLoad } from './$types'
-import { api } from '$lib/api'
 import { redirect } from '@sveltejs/kit'
+import { api } from '$lib/api'
+import type { PageLoad } from './$types'
 
 export interface Application {
   id: string

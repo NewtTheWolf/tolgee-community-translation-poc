@@ -18,4 +18,7 @@ export const api = {
   del: <T>(p: string, f?: typeof fetch) => req<T>('DELETE', p, undefined, f),
 }
 
-export type Me = { user: { id: string; login: string; isAdmin: boolean } | null; roles?: { locale: string; role: 'translator' | 'reviewer' }[] }
+export type Me = {
+  user: { id: string; login: string; isAdmin: boolean } | null
+  roles?: { locale: string; role: 'translator' | 'reviewer' }[]
+}

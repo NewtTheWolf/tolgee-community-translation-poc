@@ -26,7 +26,7 @@
       ? suggestion.attribution.author.login
       : suggestion.attribution?.anon
         ? 'anonymous'
-        : 'unknown'
+        : 'unknown',
   )
 </script>
 
@@ -60,7 +60,9 @@
     color: #6b7280;
     flex-wrap: wrap;
   }
-  .key-id { font-family: monospace; }
+  .key-id {
+    font-family: monospace;
+  }
   .state {
     padding: 0.1rem 0.4rem;
     background: #f3f4f6;
@@ -73,7 +75,10 @@
     white-space: pre-wrap;
     word-break: break-word;
   }
-  .actions { display: flex; gap: 0.5rem; }
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+  }
   .accept {
     padding: 0.3rem 0.75rem;
     background: #10b981;
@@ -82,7 +87,9 @@
     border-radius: 4px;
     cursor: pointer;
   }
-  .accept:hover { background: #059669; }
+  .accept:hover {
+    background: #059669;
+  }
   .decline {
     padding: 0.3rem 0.75rem;
     background: #ef4444;
@@ -91,5 +98,7 @@
     border-radius: 4px;
     cursor: pointer;
   }
-  .decline:hover { background: #dc2626; }
+  .decline:hover {
+    background: #dc2626;
+  }
 </style>

@@ -51,7 +51,7 @@
       <p>No roles assigned yet.</p>
     {:else}
       <ul>
-        {#each (me.roles ?? []) as r}
+        {#each me.roles ?? [] as r}
           <li>{r.locale} — {r.role}</li>
         {/each}
       </ul>
@@ -83,8 +83,12 @@
 {/if}
 
 <style>
-  h1 { margin-bottom: 1rem; }
-  .section { margin-bottom: 2rem; }
+  h1 {
+    margin-bottom: 1rem;
+  }
+  .section {
+    margin-bottom: 2rem;
+  }
   .badge {
     display: inline-block;
     padding: 0.2rem 0.6rem;
@@ -103,7 +107,9 @@
     border-radius: 4px;
     cursor: pointer;
   }
-  .logout-btn:hover { background: #dc2626; }
+  .logout-btn:hover {
+    background: #dc2626;
+  }
   .apply-form {
     display: flex;
     flex-direction: column;
@@ -126,7 +132,10 @@
     font-family: inherit;
     font-size: 0.9rem;
   }
-  .apply-form textarea { min-height: 80px; resize: vertical; }
+  .apply-form textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
   .apply-form button {
     align-self: flex-start;
     padding: 0.4rem 1rem;
@@ -136,6 +145,11 @@
     border-radius: 4px;
     cursor: pointer;
   }
-  .apply-form button:hover { background: #2563eb; }
-  .feedback { font-size: 0.875rem; color: #374151; }
+  .apply-form button:hover {
+    background: #2563eb;
+  }
+  .feedback {
+    font-size: 0.875rem;
+    color: #374151;
+  }
 </style>

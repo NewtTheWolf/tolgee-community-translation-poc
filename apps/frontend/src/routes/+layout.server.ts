@@ -1,5 +1,5 @@
-import type { LayoutServerLoad } from './$types'
 import { api, type Me } from '$lib/api'
+import type { LayoutServerLoad } from './$types'
 
 export const load: LayoutServerLoad = async ({ fetch }) => {
   try {

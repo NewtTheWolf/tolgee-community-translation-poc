@@ -14,7 +14,12 @@
   }
 </script>
 
-<form onsubmit={(e) => { e.preventDefault(); submit() }}>
+<form
+  onsubmit={(e) => {
+    e.preventDefault()
+    submit()
+  }}
+>
   <textarea bind:value={text} placeholder="Suggest a translation…" required></textarea>
   <button type="submit">Suggest</button>
   {#if msg}<p>{msg}</p>{/if}
@@ -44,6 +49,12 @@
     border-radius: 4px;
     cursor: pointer;
   }
-  button:hover { background: #2563eb; }
-  p { margin: 0; font-size: 0.875rem; color: #374151; }
+  button:hover {
+    background: #2563eb;
+  }
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #374151;
+  }
 </style>

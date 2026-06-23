@@ -1,5 +1,5 @@
-import type { PageLoad } from './$types'
 import { api } from '$lib/api'
+import type { PageLoad } from './$types'
 
 export interface Language {
   id: number

@@ -23,7 +23,9 @@
 {/if}
 
 <style>
-  h1 { margin-bottom: 0.5rem; }
+  h1 {
+    margin-bottom: 0.5rem;
+  }
   .language-list {
     list-style: none;
     padding: 0;
@@ -42,7 +44,15 @@
     text-decoration: none;
     color: inherit;
   }
-  .language-list li a:hover { background: #f9fafb; border-color: #3b82f6; }
-  .lang-name { font-weight: 600; }
-  .lang-tag { font-size: 0.75rem; color: #6b7280; }
+  .language-list li a:hover {
+    background: #f9fafb;
+    border-color: #3b82f6;
+  }
+  .lang-name {
+    font-weight: 600;
+  }
+  .lang-tag {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
 </style>

@@ -26,5 +26,7 @@
     border-radius: 6px;
     font-weight: 600;
   }
-  .github-btn:hover { background: #1c2128; }
+  .github-btn:hover {
+    background: #1c2128;
+  }
 </style>
